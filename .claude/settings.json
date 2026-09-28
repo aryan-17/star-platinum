@@ -1,0 +1,57 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git diff:*)",
+      "Bash(git status:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git branch:*)",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(cat:*)",
+      "Bash(python3:*)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(pip freeze:*)",
+      "Bash(pytest:*)",
+      "Bash(ruff:*)",
+      "Bash(mypy:*)",
+      "Edit(**)",
+      "Write(**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "BRANCH=$(git -C /Users/ctme/Documents/projects/star-platinum branch --show-current 2>/dev/null); if [ \"$BRANCH\" = \"main\" ]; then echo '{\"continue\":false,\"stopReason\":\"You are on main. Create a feature branch first: git checkout -b <feature-name>\"}'; fi",
+            "statusMessage": "Checking branch..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=$(jq -r '.tool_input.file_path // \"\"' 2>/dev/null); echo \"$file\" | grep -qE '\\.py$' && cd /Users/ctme/Documents/projects/star-platinum && ruff check --quiet \"$file\" 2>&1 | head -20 || true",
+            "statusMessage": "ruff...",
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}
