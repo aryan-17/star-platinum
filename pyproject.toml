@@ -1,0 +1,56 @@
+[project]
+name = "oncall-rca"
+version = "0.1.0"
+description = "Agentic on-call RCA system for automated incident diagnosis"
+requires-python = ">=3.11"
+dependencies = [
+    "langgraph>=0.4",
+    "google-generativeai>=0.8",
+    "google-api-python-client>=2.0",
+    "google-auth-oauthlib>=1.0",
+    "pydantic>=2.0",
+    "lxml>=5.0",
+    "httpx>=0.27",
+    "python-dotenv>=1.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "lxml-stubs>=0.5",
+    "types-PyYAML>=6.0",
+    "types-requests>=2.0",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "TCH",  # flake8-type-checking
+    "RUF",  # ruff-specific
+]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

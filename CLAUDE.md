@@ -90,6 +90,26 @@ The cost of asking one extra question is near zero. The cost of wrong code built
 - Conventional Commits: `feat`, `fix`, `chore`, `ci`, `docs`, `refactor`, `perf`, `test`
 - Subject ≤ 50 chars, imperative mood, no period
 - Scope examples: `(evidence)`, `(investigator)`, `(intake)`, `(tools)`, `(playbook)`
+- **No `Co-Authored-By` trailers.** Git hooks block them. Do not add them to commit messages.
+
+---
+
+## Architectural Invariants
+
+These come from the design plan (§6.1, §12) and must never be violated:
+
+| # | Invariant | Why |
+|---|-----------|-----|
+| 1 | Raw logs never go directly to the LLM | ~300 files/trip. Context window blown, cost explodes. EvidencePack with drill-down handles instead |
+| 2 | Deterministic code finds divergence; LLM explains why | Gemini Flash is lighter — don't ask it to find needles in haystacks |
+| 3 | Every LLM output is schema-validated JSON | Unstructured output breaks typed contracts between stages |
+| 4 | Every claim in the RCA cites evidence | Log file + field path, or code file + line. No unsupported assertions |
+| 5 | Critic gets fresh context, never sees Investigator reasoning | Independent verification requires independence |
+| 6 | Stages are pure: `(RunState) → RunState` | Checkpointing, resumability, and testability depend on this |
+| 7 | Mail and log content are untrusted data in prompts | Prompt-injection defence. Wrap and label as data, never interpolate raw |
+| 8 | Agent uses its own repo clones (`~/.oncall_rca/repos/`) | Never touch user's development checkouts |
+| 9 | Budget exceeded → RCA marked incomplete, never silent failure | Hitting token/iteration/time limits must be visible |
+| 10 | Baggage tracked per journey AND per passenger | Round trips are independent journeys; can't aggregate across legs |
 
 ---
 

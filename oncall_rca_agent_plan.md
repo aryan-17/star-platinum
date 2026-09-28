@@ -1,6 +1,6 @@
 # On-Call RCA Agent — Design Plan
 
-**Status:** Design complete except for API-dependent sections (marked **⏳ PENDING API FILE**).
+**Status:** Design complete. API log reference incorporated; remaining gaps in §17.
 **Last updated:** 28 Sep 2026
 
 ---
@@ -43,7 +43,10 @@ Build an agentic AI system in Python that, for every on-call incident mail:
 | 15 | LLM | Single model: Gemini Flash |
 | 16 | Runtime | User's local machine |
 | 17 | Compliance | No constraints (redaction kept as an optional hook) |
-| 18 | Payload formats | Supplier (airline) calls are SOAP XML; internal calls JSON |
+| 18 | Payload formats | Supplier (airline) calls are SOAP XML; internal calls JSON; SS1 is gRPC protobuf logged as JSON |
+| 19 | Debugging principle | supply-core = what the user saw; air-sms = what was booked; compare them |
+| 20 | Baggage source of truth (displayed) | SS1 `fareFamilyDTO[].fareBenefits[]`; never `journeyFareSummary` baggage |
+| 21 | Suppliers | Supplier-agnostic design with per-supplier adapters; Air Arabia adapter first |
 
 ---
 
@@ -85,11 +88,15 @@ Returns a gzipped request or response payload.
 
 ### 4.3 Code
 
-| Service | Pod prefixes seen in logs | Primary branch |
-|---------|---------------------------|----------------|
-| `supply-core-new` | `supply-core-*`, `supply-core-4hold-*` | configured per repo |
-| `air-sms` | `air-sms-*` | configured per repo |
-| `air-sms-new` | `air-sms-new-*`, `air-sms-new4book-*` | configured per repo |
+| Service (repo) | Role | Pod prefixes in logs | Logs as | Primary branch |
+|----------------|------|----------------------|---------|----------------|
+| `supply-core-new` | User's world: SS1 search cache, SIS-HOLD request | `supply-core-*`, `supply-core-4hold-*` | `SUPPLY_CORE`, `HOLD`, `SMS_HOLD` (repo layer) | configured per repo |
+| `air-sms` (me-air-sms, old) | Booked world: orchestrates supplier calls | `air-sms-*`, `me-air-sms4book-*` | `HOLD_CORE`, `BOOK`, `GET_SSR` | configured per repo |
+| `air-sms-new` | Booked world, newer; makes **all** external supplier calls | `air-sms-new-*`, `air-sms-new4book-*` | `NEW-SMS` (`SMS_HOLD`, `SMS_BOOK`, `SMS_fetch_Ancillaries`, supplier calls) | configured per repo |
+
+Pod-prefix matching uses **longest match first**, because `air-sms-*` would otherwise also match `air-sms-new-*`. me-air-sms often delegates to air-sms-new, so both appear in the same flow.
+
+Other pods in the logs (`itinex-*`, `distribution-core-*`, `me-booking-handler-*`, `me-booking-terminator-*`, `me-air-vas-new-*`, `me-booking-analyser-*`) are used as log evidence only; their code is not in scope.
 
 The agent keeps **its own dedicated clones** (e.g. `~/.oncall_rca/repos/`) and never pulls into the user's development checkouts.
 
@@ -110,9 +117,9 @@ These drive the Evidence stage design.
 5. **Round trips are booked as independent journeys** (sample: COK→CAI on 3L, CAI→COK on G9), each with its own `DO_BOOKING` → `SMS_BOOK` → `SUPPLIER_BOOK` chain. Baggage must be tracked **per journey and per passenger**.
 6. **~300 files per trip.** Reading everything with an LLM is too slow and costly → targeted, playbook-driven fetching.
 
-**Illustrative anomalies (not conclusions)** the Evidence stage should surface automatically:
-- COK→CAI leg: first `SUPPLIER_BOOK` (1.3s) followed by re-search, price quotes and a baggage call, then a second `SUPPLIER_BOOK` (6.7s). The other leg booked in one pass.
-- Two `PUT_ANCILLARY` calls on different pods 24s apart; a fresh `GET_ANCILLARY` after prepayment with no following `PUT_ANCILLARY`.
+**Anomalies the Evidence stage should surface automatically** (sample trip, now explained by the API reference):
+- COK→CAI leg: first `SUPPLIER_BOOK` failed with `err.2-maxico.exposed.invalid.transaction.id` (1.3s), then re-search, re-price and a second `SUPPLIER_BOOK` succeeded (6.7s, PNR 13154X). Cause: 38-minute gap between hold and book expired the Accelaero session. **Expected behaviour** — the adapter must recognise this so it isn't reported as a root cause on its own.
+- Both journeys' HOLD and BOOK calls run in parallel with overlapping time windows, so journey attribution needs more than a time filter (§8.5).
 
 ---
 
@@ -180,11 +187,13 @@ State is checkpointed after each stage so a failed run resumes from the last com
 1. Fetch trip index.
 2. **Normalise:** merge `air_api_call` with `air_book` (pod → service), fix invalid durations, dedupe, handle missing req/res, add extra files from `files_list`.
 3. **Build call tree** from `identifier`; split per journey using solution IDs / booking URLs.
-4. **Select files** according to the incident type's playbook.
-5. **Fetch, gunzip, parse** (JSON or SOAP XML). Cache raw files at `cache/<tripId>/`.
-6. **Run extractors** to pull specific fields (baggage allowance, SSR codes, selected ancillaries…).
-7. **Find first divergence** of the invariant along the playbook chain (§8).
-8. **Output:** `EvidencePack` — timeline, call tree, anomalies, facts with citations, divergence point.
+4. **Detect supplier** from external call URLs and load the matching supplier adapter (§8.6).
+5. **Attribute external calls** to HOLD/BOOK/TICKET and to the right journey using time window + host chaining + route in IDs (§8.5).
+6. **Select files** according to the incident type's playbook and supplier adapter.
+7. **Fetch, gunzip, parse** (JSON or SOAP XML). Cache raw files at `cache/<tripId>/`.
+8. **Run extractors** to pull specific fields (fare benefits, FBC, fares, hold/book status, PNR, supplier baggage tiers…).
+9. **Find first divergence** of the invariant along the playbook chain (§8).
+10. **Output:** `EvidencePack` — timeline, call tree, supplier, anomalies, facts with citations, divergence point.
 
 ### 7.4 Repo Sync
 - For each of the 3 repos in the agent's own clones: fetch, checkout primary branch, fast-forward only.
@@ -224,35 +233,91 @@ State is checkpointed after each stage so a failed run resumes from the last com
 
 ## 8. Baggage Mismatch Playbook
 
-### 8.1 Technique: first divergence
-Trace the baggage value **per journey and per passenger** through the flow, and find the **first step where it changes or disappears**. Deterministic code locates the step; the LLM explains the cause using surrounding payloads and code.
+### 8.1 Core principle: two worlds
 
-### 8.2 Both baggage sources
-The playbook traces two paths in parallel:
-- **Fare-included allowance** (from search / fare family data).
-- **Purchased ancillary** (from ancillary offer → user selection).
+From the API reference:
 
-It first determines which source applied, then follows that chain. A disagreement between the two sources is itself a finding.
+> **supply-core = user's reality. air-sms (SMS) = booked reality. Compare them.**
 
-### 8.3 Candidate chain ⏳ PENDING API FILE
-Derived from API names in the sample; to be confirmed/corrected by the API file.
+| World | Represents | Where to read it |
+|-------|-----------|------------------|
+| supply-core | What the user was shown, and what we asked the supplier to book | SS1 response, SIS-HOLD request |
+| air-sms / air-sms-new | What the supplier actually confirmed | HOLD_CORE response, supplier external calls, BOOK response |
 
-| Stage | Candidate APIs | What to check |
-|-------|----------------|---------------|
-| Offered | `FARE_FAMILY_INFO`, `GET_ANCILLARY`, `SMS_fetch_Ancillaries`, `SUPPLIER_ANCILLARY_BAGGAGE` | What baggage was shown |
-| Selected | `PUT_ANCILLARY` (req) | What the user chose |
-| Stored | `UPDATE_ITINERARY`, `VIEW_ITINERARY` | What the itinerary saved |
-| Hold / price | `SMS_HOLD`, `SUPPLIER_PRICE_QUOTE`, baggage call during hold | What was held/priced |
-| Book request | `SMS_BOOK`, `SUPPLIER_BOOK` (req) | What was sent to supplier |
-| Book response | `SUPPLIER_BOOK` (res) | What supplier confirmed |
-| Post-book | `UPDATE-TRIP-SERVICE`, `ABS_BOOKING_DETAILS` | What the trip recorded |
+If the two worlds disagree, either supply-core built the hold/book request wrongly (our bug) or the supplier returned something different (supplier-side change). The playbook's job is to find **which comparison first fails**.
 
-### 8.4 Playbook file contents
-Each playbook (`playbooks/baggage_mismatch.yaml`) declares:
-- Ordered API chain.
-- Per step: file to open (req/res), payload format, field path (JSON path / XPath).
-- Invariants that must hold across steps.
-- Known quirks and red herrings.
+### 8.2 Technique: first divergence
+
+Trace baggage **per journey and per passenger** through the chain below and stop at the first step where the invariant breaks. Deterministic code finds the step; Gemini Flash explains the cause using the surrounding payloads and the code that built or parsed that step.
+
+### 8.3 Baggage chain
+
+| # | Step | File | What to extract | Invariant |
+|---|------|------|-----------------|-----------|
+| 1 | **SS1 — what user saw** | `SUPPLY_CORE-SINGLE_SOLUTION_SEARCH-*-res.gz` (JSON, from gRPC) | `fareFamilyDTO[].fareBenefits[]` where `benefitType` = `CHECK_IN_BAGGAGE` / cabin baggage: `qty`, `unit`, `pieceInfo`, `description`. Also `segmentFares[].fareType` and `fareBasisCode` | This is the source of truth for displayed baggage. `description = "Paid"` means not included |
+| 1b | **SS1 consistency** | All SS1 calls in the trip (4+) | Same fields as step 1 | All SS1 responses for a journey must be identical |
+| 2 | **SIS-HOLD request — what we asked to book** | `HOLD-SUPPLY_CORE_APP_LAYER-*-req.gz` or `SMS_HOLD-SUPPLY_CORE_REPO_LAYER-*-req.gz` | `bookedPromise.fareDetails` (fare, `journeyFareSummary[].segmentFares[].passengerTypeFareBasisDetailsList[]` FBC), `bookRequest.journeysInfo[]`, `bookRequest.supplierContext.airSupplier` | FBC and fare must match SS1. Wrong FBC → wrong fare class → wrong baggage |
+| 3 | **Supplier baggage during HOLD** | `NEW-SMS` external call `SUPPLIER_ANCILLARY_BAGGAGE` res (SOAP) in the HOLD window | Free baggage tier ⏳ *field path needed* | Free tier must match SS1 `CHECK_IN_BAGGAGE` |
+| 3b | **Supplier price during HOLD** | `SUPPLIER_PRICE_QUOTE` res (SOAP) | Fare and fare class ⏳ *field path needed* | Must match SIS-HOLD request |
+| 4 | **HOLD_CORE response — booked reality** | `HOLD_CORE-HOLD_CORE-*-res.gz` | `holdStatus`, `fareDetails.tripFareSummary.totalAmount`, `holdId` | `HOLD_SUCCESS`; fare equals SIS-HOLD request fare |
+| 5 | **BOOK** | `BOOK-BOOK-*-res.gz` (one per journey) | `bookingStatus`, `supplierPnr`, `ticketNumber` | `CNF`, PNR present; fare equals HOLD_CORE |
+| 5b | **Supplier book** | `SUPPLIER_BOOK` req/res (SOAP) in the BOOK window | `<Success/>`, PNR, e-ticket; baggage in request/response ⏳ *field path needed* | Baggage sent/confirmed must match step 1 |
+| 5c | **Retry check** | Repeated `SUPPLIER_BOOK`, with `findOndWiseFlightCombinations` and `SUPPLIER_PRICE_QUOTE` between them | Error of attempt 1; fare/FBC/baggage of the re-price | A retry must not change fare class or baggage |
+| 6 | **Purchased ancillary path** | ⏳ *not covered in reference* | — | Selected paid baggage must reach the supplier and be confirmed |
+
+**Do not use** `journeyFareSummary[].passengerBaggageDetails[]` for baggage (neither in SS1 nor elsewhere). The reference states it is fare-level metadata, not booked baggage. The playbook marks it as a red herring so the Investigator is told explicitly to ignore it.
+
+### 8.4 Divergence classes and what they point to
+
+| First failing step | Likely cause | Where the Investigator looks |
+|--------------------|--------------|------------------------------|
+| 1b (SS1 inconsistent) | supply-core cache returning different solutions | supply-core-new, `SingleSolutionSearchWorkflow` |
+| 2 (SIS-HOLD FBC/fare ≠ SS1) | Bug constructing the hold request (our fault) | supply-core-new, `HoldController` → `HoldMainWorkflow` |
+| 3 (supplier free tier ≠ SS1 benefit) | Supplier content differs from what we display, or benefit mapping is wrong | supply-core-new fare-benefit mapping; air-sms-new response parsing |
+| 4 (HOLD_CORE fare ≠ SIS-HOLD) | Supplier returned a different fare | `SUPPLIER_PRICE_QUOTE` response; air-sms-new |
+| 5 / 5b (booking failed or baggage missing in book) | Book request dropped baggage, or supplier rejected | air-sms book module; air-sms-new `SUPPLIER_BOOK` construction |
+| 5c (retry changed fare/baggage) | Retry path re-priced into a different fare or lost baggage | air-sms-new retry flow |
+| All steps match | Issue is downstream of booking (trip/post-book), or in the ancillary path | Flag as "no divergence in core chain" and report which checks passed |
+
+### 8.5 Attributing external calls to the right journey
+
+The reference's method is: take the main call's `time` + `duration`, then filter `api_type = "NEW-SMS"` in the same itinerary and time window, keeping calls whose `url` starts with `https://` or whose `supplier` is set.
+
+For round trips this alone is ambiguous: both journeys' HOLDs (and BOOKs) run **in parallel over overlapping windows**. In the sample trip, both HOLD_CORE calls start at 14:44:57. The Evidence stage therefore also uses:
+
+- **Host chaining.** Each journey's `SMS_HOLD` / `SMS_BOOK` runs on a specific `air-sms-new` pod, and its external calls come from that same host (sample: HOLD on `10.36.39.9` vs `10.36.46.10`; BOOK on `10.36.3.110` vs `10.36.75.10`).
+- **Route in IDs.** `holdId` and the `/journey/book/…` URLs encode the route and flight numbers (e.g. `AIR_ARABIA__COK__CAI__3L__128…`).
+- **Correlation identifiers** where they link parent and child calls.
+
+If attribution is still ambiguous, the fact is marked as such and the Critic lowers confidence rather than guessing.
+
+### 8.6 Supplier awareness
+
+External call sequences differ completely by supplier. The design handles this with **supplier adapters**:
+
+- **Supplier detection** by URL: `airarabia.com` / `accelaero.com` → Air Arabia; `amadeus.com` → Amadeus; `sabre.com` → Sabre; `flydubai.com` → FlyDubai.
+- **Adapter per supplier** declares its expected HOLD/BOOK/TICKET external call sequence, success indicators, known error codes, whether ticketing is inline, and where baggage appears.
+- **Phase 1: Air Arabia adapter only** (fully described in the reference).
+- **Unknown supplier fallback:** generic tracing still runs (find external calls, detect retries, errors, slow calls), the Investigator reads the payloads without supplier-specific extractors, and confidence is capped at Medium.
+
+Known Air Arabia patterns encoded in the adapter:
+- `err.2-maxico.exposed.invalid.transaction.id` = stale supplier session; auto-retried. Expected when the gap between hold and book is long (worked example: 38 minutes).
+- Retry sequence: `SUPPLIER_BOOK` fails → `findOndWiseFlightCombinations` → `SUPPLIER_PRICE_QUOTE` → `SUPPLIER_BOOK` again.
+- Ticketing is inline with `SUPPLIER_BOOK`; no separate TICKET step.
+- HTTP timeout (> 30s) → manual PNR check needed.
+
+### 8.7 Generic red flags (all suppliers)
+
+- Same external API called twice → first attempt failed, retry happened.
+- External call > 10s → potential timeout.
+- Response missing PNR or ticket → supplier error.
+- Fare in response ≠ fare in request → price changed.
+
+### 8.8 Playbook file contents
+`playbooks/baggage_mismatch.yaml` declares the chain in §8.3, the invariants, the divergence classes in §8.4, and red herrings. Supplier-specific parts (external call names, SOAP XPaths, error codes) live in `suppliers/<supplier>.yaml`, so adding a supplier never requires editing the playbook.
+
+### 8.9 Other playbooks this reference already enables
+The same two-worlds comparison covers **fare mismatch** (SS1 → SIS-HOLD → HOLD_CORE → BOOK) and **booking/ticketing failure** (BOOK, SUPPLIER_BOOK, TICKET). These are cheap to add in Phase 2 because the checks are already specified.
 
 ---
 
@@ -313,9 +378,11 @@ oncall_rca/
 ├── schemas/               # typed contracts (§10)
 ├── tools/                 # §9
 ├── playbooks/
-│   └── baggage_mismatch.yaml    # ⏳ PENDING API FILE
+│   └── baggage_mismatch.yaml    # chain, invariants, divergence classes (§8)
+├── suppliers/
+│   └── air_arabia.yaml          # external call sequence, XPaths, error codes, inline ticketing
 ├── catalogue/
-│   ├── api_catalogue.yaml       # every api_type: purpose, service, format ⏳
+│   ├── api_catalogue.yaml       # every api_type: purpose, service, format, key fields
 │   └── service_map.yaml         # api_type / url / pod prefix → repo + branch
 ├── skills/                # narrative domain know-how, loaded on demand
 ├── prompts/               # versioned prompts per stage
@@ -399,7 +466,8 @@ Links to files in ./evidence/
 
 ## 14. Evaluation Plan
 
-- **Golden set:** past baggage incidents with known root causes (from the API file's worked examples) ⏳.
+- **Golden set:** past baggage incidents with known root causes ⏳ (none yet — the reference's worked example is not a baggage incident).
+- **Negative control:** trip `260802431929` is a healthy booking (fares match, both PNRs CNF, retry expected). The system must report "no divergence" and must **not** blame the session-expiry retry.
 - **Replay mode:** re-run incidents against cached files — deterministic, no production API calls.
 - **Metrics:** divergence point correct, root cause correct, citation validity, confidence calibration, cost and latency per run.
 - **Gate:** any change to prompts, playbooks, skills, model or thresholds must pass the eval suite.
@@ -426,7 +494,7 @@ Links to files in ./evidence/
 | Phase | Scope |
 |-------|-------|
 | **1** | Baggage mismatch end-to-end, local runtime, human handoff to Claude Code |
-| **2** | Evals hardened; more playbooks for other incident types; knowledge base of past RCAs |
+| **2** | Evals hardened; fare-mismatch and booking-failure playbooks; Amadeus/Sabre adapters; knowledge base of past RCAs |
 | **3** | Deploy-time correlation (pod/commit at incident time); Bitbucket access |
 | **4** | Automated handoff to Claude Code for high-confidence categories; optional second model |
 
@@ -436,9 +504,14 @@ Links to files in ./evidence/
 
 | Item | Owner | Status |
 |------|-------|--------|
-| API deep-dive file (purpose, fields, invariants per API) | User | ⏳ Pending |
-| Worked examples of past incidents (for golden set) | User | ⏳ Pending (in API file) |
-| Confirm candidate baggage chain (§8.3) | User | ⏳ Pending |
+| API log reference | User | ✅ Received and incorporated |
+| Where supplier baggage appears in `SUPPLIER_ANCILLARY_BAGGAGE` response (free tier field / XPath) | User | ⏳ Needed |
+| Where baggage appears in `SUPPLIER_BOOK` request and response (SSR / XPath) | User | ⏳ Needed |
+| Whether SIS-HOLD request or HOLD_CORE response carries baggage/benefits at all | User | ⏳ Needed |
+| How a 2-piece allowance is represented in SS1 (`pieceInfo: 2`? `unit: PIECE`?) | User | ⏳ Needed |
+| Baggage benefitType values (`CABIN_BAGGAGE` vs `HAND_BAGGAGE` both appear in the reference) | User | ⏳ Needed |
+| Purchased-ancillary path: which APIs/fields (GET_ANCILLARY, PUT_ANCILLARY, SMS_fetch_Ancillaries…) | User | ⏳ Needed |
+| At least 1–3 real baggage incidents with known root cause (golden set) | User | ⏳ Needed |
 | Gmail label name | User | To provide at setup |
 | Primary branch names per repo | User | To provide at setup |
 
