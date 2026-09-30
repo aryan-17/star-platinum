@@ -91,6 +91,8 @@ The cost of asking one extra question is near zero. The cost of wrong code built
 - Subject ≤ 50 chars, imperative mood, no period
 - Scope examples: `(evidence)`, `(investigator)`, `(intake)`, `(tools)`, `(playbook)`
 - **No `Co-Authored-By` trailers.** Git hooks block them. Do not add them to commit messages.
+- **PR workflow:** When a branch's work is complete, create a PR to main and wait for user review before merging. Never merge directly — all code reaches main through reviewed PRs.
+- **Branch per sprint/task.** Each sprint or logical unit of work gets its own branch. Branch is merged via PR only after review.
 
 ---
 
