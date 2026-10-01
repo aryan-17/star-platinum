@@ -1,0 +1,180 @@
+{
+  "bookingInformation": {
+    "passengers": [
+      {
+        "index": 1,
+        "firstName": "AHMEDBASIM",
+        "lastName": "PUTHENPURAYIL ABOOBACKER",
+        "middleName": "",
+        "dob": 1114626600000,
+        "gender": "MALE",
+        "emailAddress": "absidhiq@gmail.com",
+        "address": {
+          "address1": "Unit No 001, Ground Floor, DTC Bldg,",
+          "address2": "Sitaram mills compd,N.M.joshi Marg,Lower parel",
+          "city": "Mumbai",
+          "state": "Mah",
+          "postalCode": "400013",
+          "countryName": "India",
+          "countryCode": "IN",
+          "phoneNumber": "553695602"
+        },
+        "paxType": "ADULT",
+        "title": "Mr",
+        "birthCountryCode": "",
+        "nationalityCode": "IN",
+        "phoneNumberDetails": {
+          "phoneNumber": "553695602",
+          "countryCode": "971",
+          "areaCode": ""
+        },
+        "passengerAdditionalAttributeMap": {},
+        "documentTypeDocumentMap": {
+          "PASSPORT": {
+            "documentType": "PASSPORT",
+            "passportNumber": "B9539752",
+            "passportExpireDate": 2020530600000,
+            "passportIssuingCountryCode": "IN",
+            "passportIssuingCountryName": "",
+            "nationalityCountryCode": "IN",
+            "documentId": "B9539752"
+          }
+        },
+        "journeySsrs": [
+          {
+            "originDestinationInfo": {
+              "to": "CAI",
+              "from": "COK"
+            },
+            "segmentSsrs": [
+              {
+                "segmentIndex": 1,
+                "originDestinationInfo": {
+                  "to": "AUH",
+                  "from": "COK"
+                },
+                "ancillaries": [],
+                "flight": {
+                  "number": "128",
+                  "airlineCode": "3L",
+                  "aircraftType": "",
+                  "equipmentCode": ""
+                }
+              },
+              {
+                "segmentIndex": 2,
+                "originDestinationInfo": {
+                  "to": "CAI",
+                  "from": "AUH"
+                },
+                "ancillaries": [],
+                "flight": {
+                  "number": "422",
+                  "airlineCode": "3L",
+                  "aircraftType": "",
+                  "equipmentCode": ""
+                }
+              }
+            ],
+            "ancillaries": [],
+            "additionalProperties": {}
+          }
+        ],
+        "additionalProperties": {}
+      }
+    ],
+    "customerInformation": {
+      "firstName": "AHMEDBASIM",
+      "lastName": "PUTHENPURAYIL ABOOBACKER",
+      "title": "Mr",
+      "emailId": "absidhiq@gmail.com",
+      "phoneNumberDetails": {
+        "phoneNumber": "553695602",
+        "countryCode": "971",
+        "areaCode": ""
+      },
+      "customerAddress": {
+        "shipAddressOne": "Unit No 001, Ground Floor, DTC Bldg,",
+        "shipAddressTwo": "Sitaram mills compd,N.M.joshi Marg,Lower parel",
+        "shipCity": "Mumbai",
+        "shipCountry": "India",
+        "shipPinCode": "400013",
+        "shipState": "Mah"
+      }
+    },
+    "gstInformation": {
+      "gstNumber": "",
+      "gstHolderName": "",
+      "gstHolderAddress": "",
+      "gstHolderStateName": "",
+      "gstHolderStateCode": "",
+      "gstHolderEmailAddress": ""
+    },
+    "journeysInfo": [
+      {
+        "segmentsInfo": [
+          {
+            "flightsInfo": {
+              "flightNumber": "128",
+              "arrivalAirportCode": "AUH",
+              "departureAirportCode": "COK",
+              "carrierCode": "3L",
+              "arrivalTime": {
+                "epoch": 1786586400000,
+                "timeZone": "Asia/Dubai"
+              },
+              "departTime": {
+                "epoch": 1786577400000,
+                "timeZone": "Asia/Kolkata"
+              }
+            },
+            "from": "COK",
+            "to": "AUH"
+          },
+          {
+            "flightsInfo": {
+              "flightNumber": "422",
+              "arrivalAirportCode": "CAI",
+              "departureAirportCode": "AUH",
+              "carrierCode": "3L",
+              "arrivalTime": {
+                "epoch": 1786612500000,
+                "timeZone": "Africa/Cairo"
+              },
+              "departTime": {
+                "epoch": 1786602300000,
+                "timeZone": "Asia/Dubai"
+              }
+            },
+            "from": "AUH",
+            "to": "CAI"
+          }
+        ],
+        "from": "COK",
+        "to": "CAI",
+        "cabinType": "ECONOMY"
+      }
+    ],
+    "fareInfo": {
+      "totalAmount": 1073.29,
+      "fareCategory": {
+        "fareCategoryType": "RETAIL",
+        "subCategory": "REGULAR",
+        "fareType": "NON_REFUNDABLE",
+        "fareName": ""
+      }
+    },
+    "supplierContext": {
+      "airSupplier": "AIR_ARABIA",
+      "additionalProperties": {}
+    }
+  },
+  "solutionId": "COK|CAI|1786559400000|1|0|0|ECONOMY|DEFAULT|STANDARD|||REGULAR|production_ME_AIR_ARABIA_ONEAPI~COK^AUH^3L^128:AUH^CAI^3L^422",
+  "comboFbc": "P,P",
+  "context": {
+    "itineraryId": "NIX56202929-bab8-4e47-abec-260802140656"
+  },
+  "fareMatchStrategy": "EXACT",
+  "source": "HOLD",
+  "action": "HOLD"
+}

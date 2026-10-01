@@ -1,0 +1,79 @@
+{
+  "passengerBookingDetails": [
+    {
+      "passengerDetails": {
+        "index": 1,
+        "firstName": "AHMEDBASIM",
+        "lastName": "PUTHENPURAYIL ABOOBACKER",
+        "dob": "2005-04-28",
+        "gender": "MALE",
+        "emailAddress": "absidhiq@gmail.com",
+        "address": {
+          "address1": "Unit No 001, Ground Floor, DTC Bldg,",
+          "address2": "Sitaram mills compd,N.M.joshi Marg,Lower parel",
+          "city": "Mumbai",
+          "state": "Mah",
+          "postalCode": "400079",
+          "countryCode": "IN",
+          "phoneNumber": "553695602",
+          "countryName": "India"
+        },
+        "title": "Mr",
+        "phoneNumber": "553695602",
+        "travellerType": "ADULT",
+        "nationality": "IN",
+        "passport": {
+          "passportNumber": "B9539752",
+          "passportExpireDate": "2034-01-11",
+          "passportIssuingCountryCode": "IN",
+          "passportIssuingCountryName": "India",
+          "nationalityCountryCode": "IN"
+        },
+        "phoneNumberDetails": {
+          "contactNumber": "553695602",
+          "areaCode": "400079",
+          "countryAccessCode": "971"
+        },
+        "documents": []
+      },
+      "ancillaryDetails": [
+        {
+          "originDestinationInfo": {
+            "from": "COK",
+            "to": "CAI"
+          },
+          "segmentAncillaryDetails": [],
+          "additionalProperties": {}
+        }
+      ],
+      "additionalProperties": {}
+    }
+  ],
+  "customer": {
+    "firstName": "AHMEDBASIM",
+    "title": "Mr",
+    "lastName": "PUTHENPURAYIL ABOOBACKER",
+    "emailId": "absidhiq@gmail.com",
+    "phoneNumberDetails": {
+      "contactNumber": "553695602",
+      "areaCode": "400079",
+      "countryAccessCode": "971"
+    },
+    "phoneNumber": "553695602"
+  },
+  "additionalProperties": {
+    "SUPPLIER": "AIR_ARABIA"
+  },
+  "flightInfos": [
+    {
+      "flightNumber": "128",
+      "departureDate": 1786577400000
+    },
+    {
+      "flightNumber": "422",
+      "departureDate": 1786602300000
+    }
+  ],
+  "isBookingProcessed": false,
+  "bookingProcessed": false
+}

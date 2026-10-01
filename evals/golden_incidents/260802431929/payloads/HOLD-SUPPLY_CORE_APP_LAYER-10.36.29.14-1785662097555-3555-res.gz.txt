@@ -1,0 +1,746 @@
+{
+  "status": "SUCCESS",
+  "pricingIndicator": "NO_CHANGE",
+  "flightSolutionDTO": {
+    "solutionId": "COK|CAI|1786559400000|1|0|0|ECONOMY|DEFAULT|STANDARD|||REGULAR|production_ME_AIR_ARABIA_ONEAPI~COK^AUH^3L^128:AUH^CAI^3L^422",
+    "flightDTO": [
+      {
+        "flightSegmentDTOList": [
+          {
+            "departFromStop": {
+              "airport": "COK",
+              "time": 1786577400000,
+              "zoneId": "Z",
+              "terminal": "Terminal 3"
+            },
+            "arrivalToStop": {
+              "airport": "AUH",
+              "time": 1786586400000,
+              "zoneId": "Z",
+              "terminal": "Terminal A"
+            },
+            "segmentFlightDetailsDTO": {
+              "airline": "3L",
+              "operatingAirlines": "3L",
+              "marketingAirlines": "3L",
+              "flightNumber": "128",
+              "durationInMinutes": 150,
+              "aircraftType": "A320"
+            },
+            "layoverInfoDTO": {
+              "layoverType": "LAYOVER_NORMAL",
+              "technicalLayoverInfoDTOList": []
+            },
+            "segmentFareCodeDTOS": [
+              {
+                "comboFbc": "P,P",
+                "bookingClass": "P",
+                "fareBasisCode": "P",
+                "productClass": "Basic",
+                "availableSeatCount": 0,
+                "cabinType": "ECONOMY",
+                "fareBrand": "STANDARD",
+                "unifiedFareGroup": "REGULAR"
+              }
+            ],
+            "dataBag": {
+              "additionalProps": {
+                "SEGMENT_RPH": "3L$COK/AUH$104510$20260813050000$20260813073000"
+              },
+              "internalContext": {}
+            }
+          },
+          {
+            "departFromStop": {
+              "airport": "AUH",
+              "time": 1786602300000,
+              "zoneId": "Z",
+              "terminal": "Terminal A"
+            },
+            "arrivalToStop": {
+              "airport": "CAI",
+              "time": 1786612500000,
+              "zoneId": "Z",
+              "terminal": "Terminal 1"
+            },
+            "segmentFlightDetailsDTO": {
+              "airline": "3L",
+              "operatingAirlines": "3L",
+              "marketingAirlines": "3L",
+              "flightNumber": "422",
+              "durationInMinutes": 170,
+              "aircraftType": "A320"
+            },
+            "layoverInfoDTO": {
+              "layoverType": "LAYOVER_NORMAL",
+              "technicalLayoverInfoDTOList": []
+            },
+            "segmentFareCodeDTOS": [
+              {
+                "comboFbc": "P,P",
+                "bookingClass": "P",
+                "fareBasisCode": "P",
+                "productClass": "Basic",
+                "availableSeatCount": 0,
+                "cabinType": "ECONOMY",
+                "fareBrand": "STANDARD",
+                "unifiedFareGroup": "REGULAR"
+              }
+            ],
+            "dataBag": {
+              "additionalProps": {
+                "SEGMENT_RPH": "3L$AUH/CAI$133343$20260813115500$20260813144500"
+              },
+              "internalContext": {}
+            }
+          }
+        ],
+        "dataBag": {
+          "additionalProps": {
+            "journeyKey": "AIR_ARABIA__COK__CAI__3L__128__3L__422__20260813103000__20260813201500______NEW_SMS_FLOW____"
+          },
+          "internalContext": {}
+        }
+      }
+    ],
+    "fareFamilyDTO": [
+      {
+        "comboFbc": "P,P",
+        "totalFareDTO": {
+          "netFare": 1073.29,
+          "priceComponentDTOList": [
+            {
+              "category": "BASE_FARE",
+              "code": "",
+              "amount": 758.68,
+              "currency": "AED",
+              "services": []
+            },
+            {
+              "category": "TAX",
+              "code": "AIRLINE-MSC",
+              "amount": 314.61,
+              "currency": "AED",
+              "services": []
+            }
+          ]
+        },
+        "costToCleartrip": 1073.29,
+        "paxFareInfoDTO": [
+          {
+            "paxType": "ADULT",
+            "baggageResponseDTOList": [
+              {
+                "baggageType": "BAGGAGE_CHECK_IN",
+                "baggageAllowanceDTO": {
+                  "baggageUnit": "KG",
+                  "qty": 20.0,
+                  "pieceInfo": 1,
+                  "dimensions": {
+                    "height": 0.0,
+                    "width": 0.0,
+                    "length": 0.0,
+                    "dimension_unit": ""
+                  },
+                  "description": ""
+                }
+              },
+              {
+                "baggageType": "BAGGAGE_CABIN",
+                "baggageAllowanceDTO": {
+                  "baggageUnit": "KG",
+                  "qty": 7.0,
+                  "pieceInfo": 1,
+                  "dimensions": {
+                    "height": 0.0,
+                    "width": 0.0,
+                    "length": 0.0,
+                    "dimension_unit": ""
+                  },
+                  "description": ""
+                }
+              }
+            ],
+            "paxCount": 1,
+            "priceComponentDTOS": [
+              {
+                "category": "BASE_FARE",
+                "code": "",
+                "amount": 758.68,
+                "currency": "AED",
+                "services": []
+              },
+              {
+                "category": "TAX",
+                "code": "AIRLINE-MSC",
+                "amount": 314.61,
+                "currency": "AED",
+                "services": []
+              }
+            ]
+          }
+        ],
+        "fareSubType": "retail",
+        "fareMetaInfoDTO": {
+          "fareId": "BasicSTANDARD_BA207_MNAED",
+          "fareName": "Basic",
+          "pccCode": "ABYSHJ647",
+          "validatingCarrier": "G9",
+          "fareCategoryType": "RETAIL",
+          "promiseId": "AIR_ARABIA__a89b3159b78b0401ad04d0942e1e762f63812ac28da8d778e84287f33cc42390V3__NEW_SMS_FLOW__D17865972003L128COKAUH3L128D17866221003L422AUHCAI3L422OW",
+          "supCurrency": "AED",
+          "supplierInfoDTO": {
+            "supplier": "AIR_ARABIA",
+            "credentialKey": "production_ME_AIR_ARABIA_ONEAPI"
+          },
+          "regularFare": 1073.29,
+          "cachedAt": 1785658264466
+        },
+        "fareRulesDTO": {
+          "refundable": false,
+          "otherChargesCancellation": 0.0,
+          "otherChargesAmendment": 0.0,
+          "isLite": false,
+          "refundableRule": "NOT_REFUNDABLE",
+          "conversionRateMap": {},
+          "fareRuleDetail": {
+            "solutionId": "",
+            "comboFbc": "",
+            "journeyWiseFareRules": {}
+          },
+          "lite": false
+        },
+        "groupName": "Basic",
+        "groupDisplayName": "Standard",
+        "fareGroupInfo": "REGULAR",
+        "fareBenefits": [
+          {
+            "@class": "com.cleartrip.supplier.search.models.DTO.FareBenefitsDTOs.BenefitsDTO",
+            "description": "Paid",
+            "benefitType": "MEAL",
+            "benefitName": "Benefits",
+            "value": "PAID",
+            "shortDescription": "Paid",
+            "amount": 1.1,
+            "currency": ""
+          },
+          {
+            "@class": "com.cleartrip.supplier.search.models.DTO.FareBenefitsDTOs.BenefitsDTO",
+            "description": "Paid",
+            "benefitType": "SEAT",
+            "benefitName": "Benefits",
+            "value": "PAID",
+            "shortDescription": "Paid",
+            "amount": 1.1,
+            "currency": ""
+          },
+          {
+            "@class": "com.cleartrip.supplier.search.models.DTO.FareBenefitsDTOs.CheckInBaggageDTO",
+            "description": "",
+            "benefitType": "BAGGAGE",
+            "benefitName": "CheckInBaggage",
+            "passengerTypeCodes": [
+              "ADT"
+            ],
+            "baggageType": "BAGGAGE_CHECK_IN",
+            "measurements": [
+              {
+                "unit": "KG",
+                "type": "Weight",
+                "value": 20.0
+              },
+              {
+                "unit": "PIECE",
+                "type": "PIECE",
+                "value": 1.0
+              }
+            ],
+            "amount": {
+              "value": 1.0,
+              "currency": "AED"
+            },
+            "baggageInfoText": "",
+            "pieceInfo": true,
+            "weightInfo": true
+          },
+          {
+            "@class": "com.cleartrip.supplier.search.models.DTO.FareBenefitsDTOs.CabinBaggageDTO",
+            "description": "",
+            "benefitType": "BAGGAGE",
+            "benefitName": "CabinBaggage",
+            "passengerTypeCodes": [
+              "ADT"
+            ],
+            "baggageType": "BAGGAGE_CABIN",
+            "measurements": [
+              {
+                "unit": "KG",
+                "type": "Weight",
+                "value": 7.0
+              },
+              {
+                "unit": "PIECE",
+                "type": "PIECE",
+                "value": 1.0
+              }
+            ],
+            "amount": {
+              "value": 1.0,
+              "currency": "AED"
+            },
+            "baggageInfoText": "",
+            "pieceInfo": true,
+            "weightInfo": true
+          },
+          {
+            "@class": "com.cleartrip.supplier.search.models.DTO.FareBenefitsDTOs.CheckInBaggageDTO",
+            "description": "",
+            "benefitType": "BAGGAGE",
+            "benefitName": "CheckInBaggage",
+            "passengerTypeCodes": [
+              "ADT"
+            ],
+            "baggageType": "BAGGAGE_CHECK_IN",
+            "measurements": [
+              {
+                "unit": "KG",
+                "type": "Weight",
+                "value": 20.0
+              },
+              {
+                "unit": "PIECE",
+                "type": "PIECE",
+                "value": 1.0
+              }
+            ],
+            "amount": {
+              "value": 1.0,
+              "currency": "AED"
+            },
+            "baggageInfoText": "",
+            "pieceInfo": true,
+            "weightInfo": true
+          },
+          {
+            "@class": "com.cleartrip.supplier.search.models.DTO.FareBenefitsDTOs.CabinBaggageDTO",
+            "description": "",
+            "benefitType": "BAGGAGE",
+            "benefitName": "CabinBaggage",
+            "passengerTypeCodes": [
+              "ADT"
+            ],
+            "baggageType": "BAGGAGE_CABIN",
+            "measurements": [
+              {
+                "unit": "KG",
+                "type": "Weight",
+                "value": 7.0
+              },
+              {
+                "unit": "PIECE",
+                "type": "PIECE",
+                "value": 1.0
+              }
+            ],
+            "amount": {
+              "value": 1.0,
+              "currency": "AED"
+            },
+            "baggageInfoText": "",
+            "pieceInfo": true,
+            "weightInfo": true
+          }
+        ],
+        "benefitsUpto": {
+          "value": 0.0,
+          "currency": ""
+        },
+        "journeyFareSummarymap": {
+          "COK_CAI": {
+            "paxFareInfoDTOList": [
+              {
+                "paxType": "ADULT",
+                "baggageResponseDTOList": [
+                  {
+                    "baggageType": "BAGGAGE_CHECK_IN",
+                    "baggageAllowanceDTO": {
+                      "baggageUnit": "KG",
+                      "qty": 20.0,
+                      "pieceInfo": 1,
+                      "dimensions": {
+                        "height": 0.0,
+                        "width": 0.0,
+                        "length": 0.0,
+                        "dimension_unit": ""
+                      },
+                      "description": ""
+                    }
+                  },
+                  {
+                    "baggageType": "BAGGAGE_CABIN",
+                    "baggageAllowanceDTO": {
+                      "baggageUnit": "KG",
+                      "qty": 7.0,
+                      "pieceInfo": 1,
+                      "dimensions": {
+                        "height": 0.0,
+                        "width": 0.0,
+                        "length": 0.0,
+                        "dimension_unit": ""
+                      },
+                      "description": ""
+                    }
+                  }
+                ],
+                "paxCount": 1,
+                "priceComponentDTOS": [
+                  {
+                    "category": "BASE_FARE",
+                    "code": "",
+                    "amount": 758.68,
+                    "currency": "AED",
+                    "services": []
+                  },
+                  {
+                    "category": "TAX",
+                    "code": "AIRLINE-MSC",
+                    "amount": 314.61,
+                    "currency": "AED",
+                    "services": []
+                  }
+                ]
+              }
+            ],
+            "segmentFareMap": {
+              "AUH_CAI": {
+                "segmentFareCodesDTO": {
+                  "comboFbc": "P,P",
+                  "bookingClass": "P",
+                  "fareBasisCode": "P",
+                  "productClass": "Basic",
+                  "availableSeatCount": 0,
+                  "cabinType": "ECONOMY",
+                  "fareBrand": "STANDARD",
+                  "unifiedFareGroup": "REGULAR"
+                },
+                "dataBag": {
+                  "additionalProps": {
+                    "supplier_commission": ""
+                  },
+                  "internalContext": {}
+                },
+                "paxFareInfoDTOList": [
+                  {
+                    "paxType": "ADULT",
+                    "baggageResponseDTOList": [
+                      {
+                        "baggageType": "BAGGAGE_CABIN",
+                        "baggageAllowanceDTO": {
+                          "baggageUnit": "KG",
+                          "qty": 7.0,
+                          "pieceInfo": 1,
+                          "dimensions": {
+                            "height": 0.0,
+                            "width": 0.0,
+                            "length": 0.0,
+                            "dimension_unit": ""
+                          },
+                          "description": ""
+                        }
+                      },
+                      {
+                        "baggageType": "BAGGAGE_CHECK_IN",
+                        "baggageAllowanceDTO": {
+                          "baggageUnit": "KG",
+                          "qty": 20.0,
+                          "pieceInfo": 1,
+                          "dimensions": {
+                            "height": 0.0,
+                            "width": 0.0,
+                            "length": 0.0,
+                            "dimension_unit": ""
+                          },
+                          "description": ""
+                        }
+                      }
+                    ],
+                    "paxCount": 1,
+                    "priceComponentDTOS": [
+                      {
+                        "category": "BASE_FARE",
+                        "code": "",
+                        "amount": 758.68,
+                        "currency": "AED",
+                        "services": []
+                      },
+                      {
+                        "category": "TAX",
+                        "code": "AIRLINE-MSC",
+                        "amount": 314.61,
+                        "currency": "AED",
+                        "services": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              "COK_AUH": {
+                "segmentFareCodesDTO": {
+                  "comboFbc": "P,P",
+                  "bookingClass": "P",
+                  "fareBasisCode": "P",
+                  "productClass": "Basic",
+                  "availableSeatCount": 0,
+                  "cabinType": "ECONOMY",
+                  "fareBrand": "STANDARD",
+                  "unifiedFareGroup": "REGULAR"
+                },
+                "dataBag": {
+                  "additionalProps": {
+                    "supplier_commission": ""
+                  },
+                  "internalContext": {}
+                },
+                "paxFareInfoDTOList": [
+                  {
+                    "paxType": "ADULT",
+                    "baggageResponseDTOList": [
+                      {
+                        "baggageType": "BAGGAGE_CABIN",
+                        "baggageAllowanceDTO": {
+                          "baggageUnit": "KG",
+                          "qty": 7.0,
+                          "pieceInfo": 1,
+                          "dimensions": {
+                            "height": 0.0,
+                            "width": 0.0,
+                            "length": 0.0,
+                            "dimension_unit": ""
+                          },
+                          "description": ""
+                        }
+                      },
+                      {
+                        "baggageType": "BAGGAGE_CHECK_IN",
+                        "baggageAllowanceDTO": {
+                          "baggageUnit": "KG",
+                          "qty": 20.0,
+                          "pieceInfo": 1,
+                          "dimensions": {
+                            "height": 0.0,
+                            "width": 0.0,
+                            "length": 0.0,
+                            "dimension_unit": ""
+                          },
+                          "description": ""
+                        }
+                      }
+                    ],
+                    "paxCount": 1,
+                    "priceComponentDTOS": [
+                      {
+                        "category": "BASE_FARE",
+                        "code": "",
+                        "amount": 758.68,
+                        "currency": "AED",
+                        "services": []
+                      },
+                      {
+                        "category": "TAX",
+                        "code": "AIRLINE-MSC",
+                        "amount": 314.61,
+                        "currency": "AED",
+                        "services": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "dataBag": {
+              "additionalProps": {
+                "segmentFares": "[{\"index\":1,\"fareType\":\"Basic\",\"cabinClass\":\"ECONOMY\",\"availableSeats\":0,\"additionalProperties\":{\"supplier_commission\":\"\"},\"inclusions\":[\"CHECK_IN_BAGGAGE\",\"HAND_BAGGAGE\",\"CHECK_IN_BAGGAGE\",\"HAND_BAGGAGE\",\"CHECK_IN_BAGGAGE\",\"HAND_BAGGAGE\",\"CHECK_IN_BAGGAGE\",\"HAND_BAGGAGE\"],\"passengerTypeFareBasisDetailsList\":[{\"passengerType\":\"ADULT\",\"fareBasisDetails\":{\"fareBasisCode\":\"P\",\"fareClassCode\":\"P\"}}]},{\"index\":2,\"fareType\":\"Basic\",\"cabinClass\":\"ECONOMY\",\"availableSeats\":0,\"additionalProperties\":{\"supplier_commission\":\"\"},\"inclusions\":[\"CHECK_IN_BAGGAGE\",\"HAND_BAGGAGE\",\"CHECK_IN_BAGGAGE\",\"HAND_BAGGAGE\",\"CHECK_IN_BAGGAGE\",\"HAND_BAGGAGE\",\"CHECK_IN_BAGGAGE\",\"HAND_BAGGAGE\"],\"passengerTypeFareBasisDetailsList\":[{\"passengerType\":\"ADULT\",\"fareBasisDetails\":{\"fareBasisCode\":\"P\",\"fareClassCode\":\"P\"}}]}]"
+              },
+              "internalContext": {}
+            },
+            "bundleFareDetails": {
+              "bundleId": "",
+              "supportedServices": "",
+              "descriptions": "",
+              "inclusions": ""
+            },
+            "baggageFareType": "BAGGAGE_FARE",
+            "journeyFareMetaInfo": {
+              "additionalFares": {
+                "REVENUE": {
+                  "fareType": "REVENUE",
+                  "fare": 1073.29
+                },
+                "CTC": {
+                  "fareType": "CTC",
+                  "fare": 1073.29
+                }
+              }
+            },
+            "fareBrandList": [
+              "STANDARD",
+              "STANDARD"
+            ],
+            "paxFareInfoDTOMap": {
+              "ADULT": {
+                "paxType": "ADULT",
+                "baggageResponseDTOList": [
+                  {
+                    "baggageType": "BAGGAGE_CHECK_IN",
+                    "baggageAllowanceDTO": {
+                      "baggageUnit": "KG",
+                      "qty": 20.0,
+                      "pieceInfo": 1,
+                      "dimensions": {
+                        "height": 0.0,
+                        "width": 0.0,
+                        "length": 0.0,
+                        "dimension_unit": ""
+                      },
+                      "description": ""
+                    }
+                  },
+                  {
+                    "baggageType": "BAGGAGE_CABIN",
+                    "baggageAllowanceDTO": {
+                      "baggageUnit": "KG",
+                      "qty": 7.0,
+                      "pieceInfo": 1,
+                      "dimensions": {
+                        "height": 0.0,
+                        "width": 0.0,
+                        "length": 0.0,
+                        "dimension_unit": ""
+                      },
+                      "description": ""
+                    }
+                  }
+                ],
+                "paxCount": 1,
+                "priceComponentDTOS": [
+                  {
+                    "category": "BASE_FARE",
+                    "code": "",
+                    "amount": 758.68,
+                    "currency": "AED",
+                    "services": []
+                  },
+                  {
+                    "category": "TAX",
+                    "code": "AIRLINE-MSC",
+                    "amount": 314.61,
+                    "currency": "AED",
+                    "services": []
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "comboPc": "STANDARD",
+        "fareSolutionId": "COK|CAI|1786559400000|1|0|0|ECONOMY|DEFAULT|STANDARD|||REGULAR|production_ME_AIR_ARABIA_ONEAPI~COK^AUH^3L^128:AUH^CAI^3L^422",
+        "dataBag": {
+          "additionalProps": {},
+          "internalContext": {}
+        },
+        "airlineBrandName": "",
+        "ctBrandName": "Regular",
+        "fareBrandList": [
+          "STANDARD",
+          "STANDARD"
+        ],
+        "unifiedFareCategory": "RETAIL",
+        "unifiedFareGroup": "REGULAR"
+      }
+    ],
+    "solutionMetaInfoDTO": {
+      "supplierInfoDTO": {
+        "supplier": "AIR_ARABIA",
+        "credentialKey": "production_ME_AIR_ARABIA_ONEAPI"
+      },
+      "promiseId": "AIR_ARABIA__a89b3159b78b0401ad04d0942e1e762f63812ac28da8d778e84287f33cc42390V3__NEW_SMS_FLOW__D17865972003L128COKAUH3L128D17866221003L422AUHCAI3L422OW",
+      "metaDataDTOS": [
+        {
+          "key": "CACHED_AT",
+          "value": "1785658264466",
+          "type": "LONG"
+        },
+        {
+          "key": "UPDATED_AT",
+          "value": "1785658264466",
+          "type": "LONG"
+        }
+      ],
+      "supCurrency": "AED"
+    },
+    "supplierDataBag": {
+      "additionalProps": {
+        "searchGCSID": "699b8e1a-bac8-4491-8481-c5ae6cd69e3e-air_arabia-1785658264403",
+        "RequestSearchGcsId": "97c0245e68cfe3dada70ae5b6f662963",
+        "searchLoggingId": "699b8e1a-bac8-4491-8481-c5ae6cd69e3e-air_arabia-1785658264403"
+      },
+      "internalContext": {
+        "AED_AED_conversionRate": "1.0000",
+        "SESSION_ID": "JSESSIONID\u003dB8770AE952F492CE50A356A2FBFF1F29.",
+        "TRANSACTION_ID": "TID$17856582639057229360-FBFF1F29.",
+        "TravellerReferenceDetails": "null"
+      }
+    }
+  },
+  "supplierContext": {
+    "credentialKey": {
+      "value": "production_ME_AIR_ARABIA_ONEAPI"
+    },
+    "airSupplier": {
+      "value": "AIR_ARABIA"
+    },
+    "additionalAttributes": {}
+  },
+  "smsAppContext": {
+    "success": true,
+    "responseCode": 200,
+    "description": "HOLD_SUCCESS",
+    "journeyId": "AIR_ARABIA__COK__CAI__3L__128__3L__422__20260813103000__20260813201500______NEW_SMS_FLOW____b802c6e0-f411-4e89-bd32-503490a51dd9"
+  },
+  "additionalProperties": {
+    "smsSearchRequest": "{\"departDate\":1786597200000,\"roundTrip\":false,\"from\":\"COK\",\"to\":\"CAI\",\"originNearByAirports\":[],\"destinationNearByAirports\":[],\"adults\":1,\"children\":0,\"infants\":0,\"returnDate\":null,\"reSearch\":false,\"international\":true,\"customerIP\":null,\"cabinType\":null,\"specialRT\":false,\"parentId\":null,\"preferredAirlines\":[],\"additionalAttributes\":{},\"itineraryId\":null,\"accountCodes\":null,\"excludedAirlines\":[],\"stopCount\":-1,\"promoCode\":null,\"fareTypes\":[],\"productClasses\":[],\"filters\":[],\"includeAirlines\":[],\"itineraryDetails\":[{\"origin\":\"COK\",\"destination\":\"CAI\",\"departDate\":1786597200000,\"originNearbyAirports\":[],\"destinationNearbyAirports\":[],\"originRadialSearchCriteria\":null,\"destinationRadialSearchCriteria\":null}],\"cabinTypeCriteria\":{\"includeAllClasses\":false,\"cabinType\":\"ECONOMY\"},\"supplierCriteria\":null,\"sellingCountry\":null,\"fareSearchCriterias\":[],\"isInternational\":true,\"isCombinedRT\":false,\"paxInfo\":[],\"offerDetail\":null,\"userId\":null,\"sourceType\":null,\"multiCityItineraryRequest\":false,\"roundTripItineraryRequest\":false}",
+    "agentName": "SHJ647",
+    "SUPPLIER": "AIR_ARABIA"
+  },
+  "payableAmount": 1073.29,
+  "passengersWiseHoldInformation": [
+    {
+      "passengerIndex": 1,
+      "journeysInformation": [
+        {
+          "from": "COK",
+          "to": "CAI",
+          "ancillaryHoldInformation": {
+            "ancillarysHoldStatus": []
+          },
+          "segmentsInformation": [
+            {
+              "to": "AUH",
+              "from": "COK",
+              "ancillaryHoldInformation": {
+                "ancillarysHoldStatus": []
+              }
+            },
+            {
+              "to": "CAI",
+              "from": "AUH",
+              "ancillaryHoldInformation": {
+                "ancillarysHoldStatus": []
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
