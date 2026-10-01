@@ -1,0 +1,788 @@
+{
+  "journeyId": "AIR_ARABIA__CAI__COK__G9__621__G9__426__20260825075000__20260826001500______NEW_SMS_FLOW____c255518b-e8a2-4c11-afb9-6d48422a6f37",
+  "holdResponse": {
+    "success": true,
+    "responseCode": 200,
+    "description": "HOLD_SUCCESS",
+    "holdID": "AIR_ARABIA__CAI__COK__G9__621__G9__426__20260825075000__20260826001500______NEW_SMS_FLOW____2462a5ec-9327-42cf-90cc-0254f42e06c3",
+    "updatedPromise": {
+      "id": "AIR_ARABIA__0df7f1ef556b0ab21699272893924477a2e9463f4bf5f49370d1fbf54a90783cV3__NEW_SMS_FLOW__D1787624400G9621CAISHJG9621D1787663400G9426SHJCOKG9426OW",
+      "searchId": "AIR_ARABIA__0df7f1ef556b0ab21699272893924477a2e9463f4bf5f49370d1fbf54a90783cV3",
+      "paxDetails": {
+        "adults": 1,
+        "childs": 0,
+        "infants": 0,
+        "paxInfoList": [
+          {
+            "count": 1,
+            "type": "ADULT",
+            "paxFareTypes": [
+              "REGULAR"
+            ],
+            "passengerType": "ADT"
+          }
+        ],
+        "totalPassengers": 1
+      },
+      "journeys": [
+        {
+          "journeyIndex": 1,
+          "segments": [
+            {
+              "index": 1,
+              "flight": {
+                "number": "621",
+                "airlineCode": "G9",
+                "aircraftType": "A320",
+                "equipmentCode": "A320"
+              },
+              "departureDetails": {
+                "departingAirport": {
+                  "airportCode": "CAI",
+                  "terminal": "Terminal 1"
+                },
+                "departTime": "2026-08-25T02:20:00.000+0000"
+              },
+              "arrivalDetails": {
+                "arrivalAirport": {
+                  "airportCode": "SHJ",
+                  "terminal": ""
+                },
+                "arrivalTime": "2026-08-25T06:45:00.000+0000"
+              },
+              "operatingAirline": {
+                "code": "G9",
+                "flightNumber": "621"
+              },
+              "marketingAirline": {
+                "code": "G9",
+                "flightNumber": "621"
+              },
+              "additionalProperties": {
+                "SEGMENT_RPH": "G9$CAI/SHJ$3179059$20260825022000$20260825064500"
+              },
+              "additionalInformations": [
+                {
+                  "code": "BAGGAGE_RECHECKIN_REQUIRED",
+                  "message": "false"
+                }
+              ],
+              "duration": 265
+            },
+            {
+              "index": 2,
+              "flight": {
+                "number": "426",
+                "airlineCode": "G9",
+                "aircraftType": "A320",
+                "equipmentCode": "A320"
+              },
+              "departureDetails": {
+                "departingAirport": {
+                  "airportCode": "SHJ",
+                  "terminal": ""
+                },
+                "departTime": "2026-08-25T13:10:00.000+0000"
+              },
+              "arrivalDetails": {
+                "arrivalAirport": {
+                  "airportCode": "COK",
+                  "terminal": "Terminal 3"
+                },
+                "arrivalTime": "2026-08-25T18:45:00.000+0000"
+              },
+              "operatingAirline": {
+                "code": "G9",
+                "flightNumber": "426"
+              },
+              "marketingAirline": {
+                "code": "G9",
+                "flightNumber": "426"
+              },
+              "additionalProperties": {
+                "SEGMENT_RPH": "G9$SHJ/COK$3204943$20260825131000$20260825184500"
+              },
+              "additionalInformations": [
+                {
+                  "code": "BAGGAGE_RECHECKIN_REQUIRED",
+                  "message": "false"
+                }
+              ],
+              "duration": 335
+            }
+          ],
+          "noOfStops": 1,
+          "additionalProperties": {
+            "journeyKey": "AIR_ARABIA__CAI__COK__G9__621__G9__426__20260825075000__20260826001500______NEW_SMS_FLOW____"
+          },
+          "duration": 985
+        }
+      ],
+      "fareDetails": {
+        "id": "BasicSTANDARD_BA207_MNAED",
+        "fareBasicInfo": {
+          "fareName": "Basic",
+          "fareType": "STANDARD",
+          "source": {
+            "pccCode": "ABYSHJ647"
+          }
+        },
+        "tripFareSummary": {
+          "totalAmount": 1253.28,
+          "totalFareBreakup": [
+            {
+              "component": "BASE_FARE",
+              "amount": 920.0
+            },
+            {
+              "component": "TAX",
+              "amount": 333.28,
+              "taxes": [
+                {
+                  "taxCategory": "AIRLINE_MSC",
+                  "amount": 333.28
+                }
+              ]
+            }
+          ],
+          "tripPassengerFareSummary": [
+            {
+              "passengerType": "ADULT",
+              "quantity": 1,
+              "baseFare": 920.0,
+              "taxDetails": {
+                "totalTaxAmount": 333.28,
+                "taxes": [
+                  {
+                    "taxCategory": "AIRLINE_MSC",
+                    "amount": 333.28
+                  }
+                ]
+              },
+              "fareBreakups": [
+                {
+                  "component": "BASE_FARE",
+                  "amount": 920.0
+                },
+                {
+                  "component": "TAX",
+                  "amount": 333.28,
+                  "taxes": [
+                    {
+                      "taxCategory": "AIRLINE_MSC",
+                      "amount": 333.28
+                    }
+                  ]
+                }
+              ],
+              "commissionAmount": 0.0,
+              "refundable": false
+            }
+          ],
+          "paxFareType": "REGULAR"
+        },
+        "journeyFareSummary": [
+          {
+            "fareSummary": {
+              "totalAmount": 1253.28,
+              "totalFareBreakup": [
+                {
+                  "component": "BASE_FARE",
+                  "amount": 920.0
+                },
+                {
+                  "component": "TAX",
+                  "amount": 333.28,
+                  "taxes": [
+                    {
+                      "taxCategory": "AIRLINE_MSC",
+                      "amount": 333.28
+                    }
+                  ]
+                }
+              ],
+              "tripPassengerFareSummary": [
+                {
+                  "passengerType": "ADULT",
+                  "quantity": 1,
+                  "baseFare": 920.0,
+                  "taxDetails": {
+                    "totalTaxAmount": 333.28,
+                    "taxes": [
+                      {
+                        "taxCategory": "AIRLINE_MSC",
+                        "amount": 333.28
+                      }
+                    ]
+                  },
+                  "fareBreakups": [
+                    {
+                      "component": "BASE_FARE",
+                      "amount": 920.0
+                    },
+                    {
+                      "component": "TAX",
+                      "amount": 333.28,
+                      "taxes": [
+                        {
+                          "taxCategory": "AIRLINE_MSC",
+                          "amount": 333.28
+                        }
+                      ]
+                    }
+                  ],
+                  "commissionAmount": 0.0,
+                  "refundable": false
+                }
+              ],
+              "paxFareType": "REGULAR"
+            },
+            "passengerBaggageDetails": [
+              {
+                "passengerType": "ADULT",
+                "baggageDetails": [
+                  {
+                    "unit": "KG",
+                    "quantity": 20,
+                    "description": "",
+                    "baggageType": "CHECKIN_BAGGAGE",
+                    "free": true
+                  },
+                  {
+                    "unit": "KG",
+                    "quantity": 7,
+                    "description": "",
+                    "baggageType": "HAND_BAGGAGE",
+                    "free": true
+                  }
+                ]
+              }
+            ],
+            "segmentFares": [
+              {
+                "index": 1,
+                "fareType": "Basic",
+                "cabinClass": "ECONOMY",
+                "passengerTypeFareBasisDetailsList": [
+                  {
+                    "passengerType": "ADULT",
+                    "fareBasisDetails": {
+                      "fareBasisCode": "P",
+                      "fareClassCode": "P"
+                    }
+                  }
+                ],
+                "availableSeats": 0,
+                "additionalProperties": {
+                  "supplier_commission": ""
+                },
+                "passengerMeals": [],
+                "inclusions": [
+                  "CHECK_IN_BAGGAGE",
+                  "HAND_BAGGAGE"
+                ],
+                "passengerFares": [
+                  {
+                    "passengerType": "ADULT",
+                    "quantity": 1,
+                    "baseFare": 920.0,
+                    "taxDetails": {
+                      "totalTaxAmount": 333.28,
+                      "taxes": [
+                        {
+                          "taxCategory": "AIRLINE_MSC",
+                          "amount": 333.28
+                        }
+                      ]
+                    },
+                    "fareBreakups": [
+                      {
+                        "component": "BASE_FARE",
+                        "amount": 920.0
+                      },
+                      {
+                        "component": "TAX",
+                        "amount": 333.28,
+                        "taxes": [
+                          {
+                            "taxCategory": "AIRLINE_MSC",
+                            "amount": 333.28
+                          }
+                        ]
+                      }
+                    ],
+                    "commissionAmount": 0.0,
+                    "refundable": false
+                  }
+                ]
+              },
+              {
+                "index": 2,
+                "fareType": "Basic",
+                "cabinClass": "ECONOMY",
+                "passengerTypeFareBasisDetailsList": [
+                  {
+                    "passengerType": "ADULT",
+                    "fareBasisDetails": {
+                      "fareBasisCode": "P",
+                      "fareClassCode": "P"
+                    }
+                  }
+                ],
+                "availableSeats": 0,
+                "additionalProperties": {
+                  "supplier_commission": ""
+                },
+                "passengerMeals": [],
+                "inclusions": [
+                  "CHECK_IN_BAGGAGE",
+                  "HAND_BAGGAGE"
+                ],
+                "passengerFares": [
+                  {
+                    "passengerType": "ADULT",
+                    "quantity": 1,
+                    "baseFare": 920.0,
+                    "taxDetails": {
+                      "totalTaxAmount": 333.28,
+                      "taxes": [
+                        {
+                          "taxCategory": "AIRLINE_MSC",
+                          "amount": 333.28
+                        }
+                      ]
+                    },
+                    "fareBreakups": [
+                      {
+                        "component": "BASE_FARE",
+                        "amount": 920.0
+                      },
+                      {
+                        "component": "TAX",
+                        "amount": 333.28,
+                        "taxes": [
+                          {
+                            "taxCategory": "AIRLINE_MSC",
+                            "amount": 333.28
+                          }
+                        ]
+                      }
+                    ],
+                    "commissionAmount": 0.0,
+                    "refundable": false
+                  }
+                ]
+              }
+            ],
+            "additionalProperties": {},
+            "passengerFares": [
+              {
+                "passengerType": "ADULT",
+                "quantity": 1,
+                "baseFare": 920.0,
+                "taxDetails": {
+                  "totalTaxAmount": 333.28,
+                  "taxes": [
+                    {
+                      "taxCategory": "AIRLINE_MSC",
+                      "amount": 333.28
+                    }
+                  ]
+                },
+                "fareBreakups": [
+                  {
+                    "component": "BASE_FARE",
+                    "amount": 920.0
+                  },
+                  {
+                    "component": "TAX",
+                    "amount": 333.28,
+                    "taxes": [
+                      {
+                        "taxCategory": "AIRLINE_MSC",
+                        "amount": 333.28
+                      }
+                    ]
+                  }
+                ],
+                "commissionAmount": 0.0,
+                "refundable": false
+              }
+            ]
+          }
+        ],
+        "refundable": "N",
+        "currency": "AED",
+        "validatingCarrier": "G9",
+        "additionalProperties": {}
+      },
+      "promiseType": "ONEWAY",
+      "internalContext": {
+        "AED_AED_conversionRate": "1.0000",
+        "SESSION_ID": "JSESSIONID\u003d442F4B04EF987902BE1D7F0BA2559FA1.",
+        "TRANSACTION_ID": "TID$1785662100761605629-1A2559FA1.",
+        "TravellerReferenceDetails": "{\n  \"0\" : \"A1\"\n}"
+      },
+      "additionalProperties": {
+        "journeyId": "AIR_ARABIA__CAI__COK__G9__621__G9__426__20260825075000__20260826001500______NEW_SMS_FLOW____c255518b-e8a2-4c11-afb9-6d48422a6f37"
+      },
+      "appliedAccountCodes": []
+    },
+    "flightNotAvailable": false,
+    "partialSuccess": false,
+    "priceChanged": false
+  },
+  "holdContext": {
+    "updatePromise": {
+      "id": "AIR_ARABIA__0df7f1ef556b0ab21699272893924477a2e9463f4bf5f49370d1fbf54a90783cV3__NEW_SMS_FLOW__D1787624400G9621CAISHJG9621D1787663400G9426SHJCOKG9426OW",
+      "searchId": "AIR_ARABIA__0df7f1ef556b0ab21699272893924477a2e9463f4bf5f49370d1fbf54a90783cV3",
+      "paxDetails": {
+        "adults": 1,
+        "childs": 0,
+        "infants": 0,
+        "paxInfoList": [
+          {
+            "count": 1,
+            "type": "ADULT",
+            "paxFareTypes": [
+              "REGULAR"
+            ],
+            "passengerType": "ADT"
+          }
+        ],
+        "totalPassengers": 1
+      },
+      "journeys": [
+        {
+          "journeyIndex": 1,
+          "segments": [
+            {
+              "index": 1,
+              "flight": {
+                "number": "621",
+                "airlineCode": "G9",
+                "aircraftType": "A320"
+              },
+              "departureDetails": {
+                "departingAirport": {
+                  "airportCode": "CAI",
+                  "terminal": "Terminal 1"
+                },
+                "departTime": "2026-08-25T02:20:00.000+0000"
+              },
+              "arrivalDetails": {
+                "arrivalAirport": {
+                  "airportCode": "SHJ",
+                  "terminal": ""
+                },
+                "arrivalTime": "2026-08-25T06:45:00.000+0000"
+              },
+              "operatingAirline": {
+                "code": "G9",
+                "flightNumber": "621"
+              },
+              "marketingAirline": {
+                "code": "G9",
+                "flightNumber": "621"
+              },
+              "stops": [],
+              "additionalProperties": {
+                "SEGMENT_RPH": "G9$CAI/SHJ$3179059$20260825022000$20260825064500"
+              },
+              "additionalInformations": [
+                {
+                  "code": "BAGGAGE_RECHECKIN_REQUIRED",
+                  "message": "false"
+                }
+              ],
+              "duration": 265
+            },
+            {
+              "index": 2,
+              "flight": {
+                "number": "426",
+                "airlineCode": "G9",
+                "aircraftType": "A320"
+              },
+              "departureDetails": {
+                "departingAirport": {
+                  "airportCode": "SHJ",
+                  "terminal": ""
+                },
+                "departTime": "2026-08-25T13:10:00.000+0000"
+              },
+              "arrivalDetails": {
+                "arrivalAirport": {
+                  "airportCode": "COK",
+                  "terminal": "Terminal 3"
+                },
+                "arrivalTime": "2026-08-25T18:45:00.000+0000"
+              },
+              "operatingAirline": {
+                "code": "G9",
+                "flightNumber": "426"
+              },
+              "marketingAirline": {
+                "code": "G9",
+                "flightNumber": "426"
+              },
+              "stops": [],
+              "additionalProperties": {
+                "SEGMENT_RPH": "G9$SHJ/COK$3204943$20260825131000$20260825184500"
+              },
+              "additionalInformations": [
+                {
+                  "code": "BAGGAGE_RECHECKIN_REQUIRED",
+                  "message": "false"
+                }
+              ],
+              "duration": 335
+            }
+          ],
+          "noOfStops": 1,
+          "additionalProperties": {
+            "journeyKey": "AIR_ARABIA__CAI__COK__G9__621__G9__426__20260825075000__20260826001500______NEW_SMS_FLOW____"
+          },
+          "duration": 985
+        }
+      ],
+      "fareDetails": {
+        "id": "BasicSTANDARD_BA207_MNAED",
+        "fareBasicInfo": {
+          "fareName": "Basic",
+          "fareType": "STANDARD",
+          "fareGroupName": "Basic",
+          "source": {
+            "pccCode": "ABYSHJ647"
+          },
+          "fareCategoryDetail": {
+            "category": "REGULAR",
+            "fareSubCategory": "RETAIL"
+          },
+          "promoCode": "",
+          "paxDiscountCode": ""
+        },
+        "tripFareSummary": {
+          "totalAmount": 1253.28,
+          "totalFareBreakup": [
+            {
+              "component": "BASE_FARE",
+              "amount": 920.0
+            },
+            {
+              "component": "TAX",
+              "amount": 333.28,
+              "taxes": [
+                {
+                  "taxCategory": "AIRLINE_MSC",
+                  "amount": 333.28
+                }
+              ]
+            }
+          ],
+          "tripPassengerFareSummary": [
+            {
+              "passengerType": "ADULT",
+              "quantity": 1,
+              "baseFare": 920.0,
+              "taxDetails": {
+                "totalTaxAmount": 333.28,
+                "taxes": [
+                  {
+                    "taxCategory": "AIRLINE_MSC",
+                    "amount": 333.28
+                  }
+                ]
+              },
+              "commissionAmount": 0.0,
+              "refundable": false
+            }
+          ],
+          "paxFareType": "REGULAR"
+        },
+        "journeyFareSummary": [
+          {
+            "fareSummary": {
+              "totalAmount": 1253.28,
+              "totalFareBreakup": [
+                {
+                  "component": "BASE_FARE",
+                  "amount": 920.0
+                },
+                {
+                  "component": "TAX",
+                  "amount": 333.28,
+                  "taxes": [
+                    {
+                      "taxCategory": "AIRLINE_MSC",
+                      "amount": 333.28
+                    }
+                  ]
+                }
+              ],
+              "tripPassengerFareSummary": [
+                {
+                  "passengerType": "ADULT",
+                  "quantity": 1,
+                  "baseFare": 920.0,
+                  "taxDetails": {
+                    "totalTaxAmount": 333.28,
+                    "taxes": [
+                      {
+                        "taxCategory": "AIRLINE_MSC",
+                        "amount": 333.28
+                      }
+                    ]
+                  },
+                  "commissionAmount": 0.0,
+                  "refundable": false
+                }
+              ],
+              "paxFareType": "REGULAR"
+            },
+            "passengerBaggageDetails": [
+              {
+                "passengerType": "ADULT",
+                "baggageDetails": [
+                  {
+                    "unit": "KG",
+                    "quantity": 20,
+                    "description": "",
+                    "baggageType": "CHECKIN_BAGGAGE",
+                    "baggageCode": "",
+                    "free": true
+                  },
+                  {
+                    "unit": "KG",
+                    "quantity": 7,
+                    "description": "",
+                    "baggageType": "HAND_BAGGAGE",
+                    "baggageCode": "",
+                    "free": true
+                  }
+                ]
+              }
+            ],
+            "segmentFares": [
+              {
+                "index": 1,
+                "fareType": "Basic",
+                "cabinClass": "ECONOMY",
+                "passengerTypeFareBasisDetailsList": [
+                  {
+                    "passengerType": "ADULT",
+                    "fareBasisDetails": {
+                      "fareBasisCode": "P",
+                      "fareClassCode": "P"
+                    }
+                  }
+                ],
+                "availableSeats": 0,
+                "additionalProperties": {
+                  "supplier_commission": ""
+                },
+                "inclusions": [
+                  "CHECK_IN_BAGGAGE",
+                  "HAND_BAGGAGE",
+                  "CHECK_IN_BAGGAGE",
+                  "HAND_BAGGAGE",
+                  "CHECK_IN_BAGGAGE",
+                  "HAND_BAGGAGE"
+                ]
+              },
+              {
+                "index": 2,
+                "fareType": "Basic",
+                "cabinClass": "ECONOMY",
+                "passengerTypeFareBasisDetailsList": [
+                  {
+                    "passengerType": "ADULT",
+                    "fareBasisDetails": {
+                      "fareBasisCode": "P",
+                      "fareClassCode": "P"
+                    }
+                  }
+                ],
+                "availableSeats": 0,
+                "additionalProperties": {
+                  "supplier_commission": ""
+                },
+                "inclusions": [
+                  "CHECK_IN_BAGGAGE",
+                  "HAND_BAGGAGE",
+                  "CHECK_IN_BAGGAGE",
+                  "HAND_BAGGAGE",
+                  "CHECK_IN_BAGGAGE",
+                  "HAND_BAGGAGE"
+                ]
+              }
+            ],
+            "additionalProperties": {
+              "segmentFares": "[{\"index\":1,\"fareType\":\"Basic\",\"cabinClass\":\"ECONOMY\",\"passengerFares\":[{\"passengerType\":\"ADULT\",\"quantity\":1,\"baseFare\":920.0,\"taxDetails\":{\"totalTaxAmount\":333.28,\"taxes\":[{\"taxCategory\":\"AIRLINE_MSC\",\"amount\":333.28}]},\"refundable\":false,\"fareBreakups\":[{\"component\":\"BASE_FARE\",\"amount\":920.0,\"component\":\"BASE_FARE\"},{\"component\":\"TAX\",\"amount\":333.28,\"taxes\":[{\"taxCategory\":\"AIRLINE_MSC\",\"amount\":333.28}],\"component\":\"TAX\"}],\"commissionAmount\":0.0}],\"availableSeats\":0,\"additionalProperties\":{\"supplier_commission\":\"\"},\"inclusions\":[\"CHECK_IN_BAGGAGE\",\"HAND_BAGGAGE\",\"CHECK_IN_BAGGAGE\",\"HAND_BAGGAGE\"],\"passengerTypeFareBasisDetailsList\":[{\"passengerType\":\"ADULT\",\"fareBasisDetails\":{\"fareBasisCode\":\"P\",\"fareClassCode\":\"P\"}}]},{\"index\":2,\"fareType\":\"Basic\",\"cabinClass\":\"ECONOMY\",\"passengerFares\":[{\"passengerType\":\"ADULT\",\"quantity\":1,\"baseFare\":920.0,\"taxDetails\":{\"totalTaxAmount\":333.28,\"taxes\":[{\"taxCategory\":\"AIRLINE_MSC\",\"amount\":333.28}]},\"refundable\":false,\"fareBreakups\":[{\"component\":\"BASE_FARE\",\"amount\":920.0,\"component\":\"BASE_FARE\"},{\"component\":\"TAX\",\"amount\":333.28,\"taxes\":[{\"taxCategory\":\"AIRLINE_MSC\",\"amount\":333.28}],\"component\":\"TAX\"}],\"commissionAmount\":0.0}],\"availableSeats\":0,\"additionalProperties\":{\"supplier_commission\":\"\"},\"inclusions\":[\"CHECK_IN_BAGGAGE\",\"HAND_BAGGAGE\",\"CHECK_IN_BAGGAGE\",\"HAND_BAGGAGE\"],\"passengerTypeFareBasisDetailsList\":[{\"passengerType\":\"ADULT\",\"fareBasisDetails\":{\"fareBasisCode\":\"P\",\"fareClassCode\":\"P\"}}]}]"
+            }
+          }
+        ],
+        "refundable": "N",
+        "currency": "AED",
+        "validatingCarrier": "G9",
+        "additionalProperties": {}
+      },
+      "promiseType": "ONEWAY",
+      "internalContext": {
+        "AED_AED_conversionRate": "1.0000",
+        "SESSION_ID": "JSESSIONID\u003dCB01911964A7DB1A3AE2639657B12E4E.",
+        "TRANSACTION_ID": "TID$178565826390717866-57B12E4E.",
+        "TravellerReferenceDetails": "null"
+      },
+      "additionalProperties": {
+        "searchGCSID": "d25c29e2-2b7c-4240-b9db-d06b875a1e92-air_arabia-1785658264413",
+        "RequestSearchGcsId": "8770bd50fe77428c2dd818b3b15c086c",
+        "searchLoggingId": "d25c29e2-2b7c-4240-b9db-d06b875a1e92-air_arabia-1785658264413"
+      }
+    },
+    "credentialKey": "production_ME_AIR_ARABIA_ONEAPI",
+    "smsSearchRequest": {
+      "departDate": 1787624400000,
+      "roundTrip": false,
+      "from": "CAI",
+      "to": "COK",
+      "originNearByAirports": [],
+      "destinationNearByAirports": [],
+      "adults": 1,
+      "children": 0,
+      "infants": 0,
+      "reSearch": false,
+      "international": true,
+      "specialRT": false,
+      "fareTypes": [],
+      "productClasses": [],
+      "additionalAttributes": {},
+      "preferredAirlines": [],
+      "excludedAirlines": [],
+      "includeAirlines": [],
+      "filters": [],
+      "itineraryDetails": [
+        {
+          "origin": "CAI",
+          "destination": "COK",
+          "departDate": 1787624400000,
+          "originNearbyAirports": [],
+          "destinationNearbyAirports": []
+        }
+      ],
+      "cabinTypeCriteria": {
+        "includeAllClasses": false,
+        "cabinType": "ECONOMY",
+        "mixedCabin": false,
+        "cabinClass": "ECONOMY"
+      },
+      "fareSearchCriterias": [],
+      "paxInfo": [],
+      "roundTripItineraryRequest": false,
+      "multiCityItineraryRequest": false,
+      "combinedRT": false
+    },
+    "airSupplier": "AIR_ARABIA",
+    "additionalProperties": {}
+  }
+}

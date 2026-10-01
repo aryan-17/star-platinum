@@ -1,0 +1,180 @@
+{
+  "bookingInformation": {
+    "passengers": [
+      {
+        "index": 1,
+        "firstName": "AHMEDBASIM",
+        "lastName": "PUTHENPURAYIL ABOOBACKER",
+        "middleName": "",
+        "dob": 1114626600000,
+        "gender": "MALE",
+        "emailAddress": "absidhiq@gmail.com",
+        "address": {
+          "address1": "Unit No 001, Ground Floor, DTC Bldg,",
+          "address2": "Sitaram mills compd,N.M.joshi Marg,Lower parel",
+          "city": "Mumbai",
+          "state": "Mah",
+          "postalCode": "400013",
+          "countryName": "India",
+          "countryCode": "IN",
+          "phoneNumber": "553695602"
+        },
+        "paxType": "ADULT",
+        "title": "Mr",
+        "birthCountryCode": "",
+        "nationalityCode": "IN",
+        "phoneNumberDetails": {
+          "phoneNumber": "553695602",
+          "countryCode": "971",
+          "areaCode": ""
+        },
+        "passengerAdditionalAttributeMap": {},
+        "documentTypeDocumentMap": {
+          "PASSPORT": {
+            "documentType": "PASSPORT",
+            "passportNumber": "B9539752",
+            "passportExpireDate": 2020530600000,
+            "passportIssuingCountryCode": "IN",
+            "passportIssuingCountryName": "",
+            "nationalityCountryCode": "IN",
+            "documentId": "B9539752"
+          }
+        },
+        "journeySsrs": [
+          {
+            "originDestinationInfo": {
+              "to": "COK",
+              "from": "CAI"
+            },
+            "segmentSsrs": [
+              {
+                "segmentIndex": 1,
+                "originDestinationInfo": {
+                  "to": "SHJ",
+                  "from": "CAI"
+                },
+                "ancillaries": [],
+                "flight": {
+                  "number": "621",
+                  "airlineCode": "G9",
+                  "aircraftType": "",
+                  "equipmentCode": ""
+                }
+              },
+              {
+                "segmentIndex": 2,
+                "originDestinationInfo": {
+                  "to": "COK",
+                  "from": "SHJ"
+                },
+                "ancillaries": [],
+                "flight": {
+                  "number": "426",
+                  "airlineCode": "G9",
+                  "aircraftType": "",
+                  "equipmentCode": ""
+                }
+              }
+            ],
+            "ancillaries": [],
+            "additionalProperties": {}
+          }
+        ],
+        "additionalProperties": {}
+      }
+    ],
+    "customerInformation": {
+      "firstName": "AHMEDBASIM",
+      "lastName": "PUTHENPURAYIL ABOOBACKER",
+      "title": "Mr",
+      "emailId": "absidhiq@gmail.com",
+      "phoneNumberDetails": {
+        "phoneNumber": "553695602",
+        "countryCode": "971",
+        "areaCode": ""
+      },
+      "customerAddress": {
+        "shipAddressOne": "Unit No 001, Ground Floor, DTC Bldg,",
+        "shipAddressTwo": "Sitaram mills compd,N.M.joshi Marg,Lower parel",
+        "shipCity": "Mumbai",
+        "shipCountry": "India",
+        "shipPinCode": "400013",
+        "shipState": "Mah"
+      }
+    },
+    "gstInformation": {
+      "gstNumber": "",
+      "gstHolderName": "",
+      "gstHolderAddress": "",
+      "gstHolderStateName": "",
+      "gstHolderStateCode": "",
+      "gstHolderEmailAddress": ""
+    },
+    "journeysInfo": [
+      {
+        "segmentsInfo": [
+          {
+            "flightsInfo": {
+              "flightNumber": "621",
+              "arrivalAirportCode": "SHJ",
+              "departureAirportCode": "CAI",
+              "carrierCode": "G9",
+              "arrivalTime": {
+                "epoch": 1787620500000,
+                "timeZone": "Asia/Dubai"
+              },
+              "departTime": {
+                "epoch": 1787604600000,
+                "timeZone": "Africa/Cairo"
+              }
+            },
+            "from": "CAI",
+            "to": "SHJ"
+          },
+          {
+            "flightsInfo": {
+              "flightNumber": "426",
+              "arrivalAirportCode": "COK",
+              "departureAirportCode": "SHJ",
+              "carrierCode": "G9",
+              "arrivalTime": {
+                "epoch": 1787663700000,
+                "timeZone": "Asia/Kolkata"
+              },
+              "departTime": {
+                "epoch": 1787643600000,
+                "timeZone": "Asia/Dubai"
+              }
+            },
+            "from": "SHJ",
+            "to": "COK"
+          }
+        ],
+        "from": "CAI",
+        "to": "COK",
+        "cabinType": "ECONOMY"
+      }
+    ],
+    "fareInfo": {
+      "totalAmount": 1253.28,
+      "fareCategory": {
+        "fareCategoryType": "RETAIL",
+        "subCategory": "REGULAR",
+        "fareType": "NON_REFUNDABLE",
+        "fareName": ""
+      }
+    },
+    "supplierContext": {
+      "airSupplier": "AIR_ARABIA",
+      "additionalProperties": {}
+    }
+  },
+  "solutionId": "CAI|COK|1787522400000|1|0|0|ECONOMY|DEFAULT|STANDARD|||REGULAR|production_ME_AIR_ARABIA_ONEAPI~CAI^SHJ^G9^621:SHJ^COK^G9^426",
+  "comboFbc": "P,P",
+  "context": {
+    "itineraryId": "NIX56202929-bab8-4e47-abec-260802140656"
+  },
+  "fareMatchStrategy": "EXACT",
+  "source": "HOLD",
+  "action": "HOLD"
+}

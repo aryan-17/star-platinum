@@ -1,0 +1,14 @@
+{
+  "insuranceLevel": "TRIP",
+  "policyDetailsList": [
+    {
+      "paxIndex": 1,
+      "policyNumber": "CLTRQ14L4",
+      "premiumAmount": 5.44,
+      "vasStatus": "BOOKED",
+      "from": "COK",
+      "to": "CAI",
+      "policyPdf": "https://app.tripadd.com/orders/4xI8wga1H5Dl0nzlno8XXwXdCsb3p8Vy"
+    }
+  ]
+}

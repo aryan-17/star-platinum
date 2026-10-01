@@ -1,0 +1,37 @@
+{
+  "currency": "USD",
+  "bundle_offer_id": "6291725d-899c-40c5-9ffa-73a4e0540b41",
+  "client_reference_id": "a2001ad2-f3ad-4075-8136-4fae42539b27",
+  "price": 1.48,
+  "booking_reference": "13154X",
+  "passenger_purchases": [
+    {
+      "passenger": {
+        "age_category": "ADULT",
+        "first_name": "AHMEDBASIM",
+        "last_name": "PUTHENPURAYIL ABOOBACKER",
+        "email": "absidhiq@gmail.com",
+        "phone": "+971553695602"
+      },
+      "products": [
+        "71daec11-1b1a-4c2e-9fdf-46380bbadec6"
+      ]
+    }
+  ],
+  "customer": {
+    "first_name": "AHMEDBASIM",
+    "last_name": "PUTHENPURAYIL ABOOBACKER",
+    "email": "absidhiq@gmail.com",
+    "phone": "+971553695602"
+  },
+  "confirmation_recipients": [
+    {
+      "name": "AHMEDBASIM",
+      "email": "absidhiq@gmail.com"
+    },
+    {
+      "name": "AHMEDBASIM",
+      "email": "add-ons@cleartrip.ae"
+    }
+  ]
+}
