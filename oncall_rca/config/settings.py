@@ -72,7 +72,7 @@ class Settings(BaseSettings):
     Loads from .env file if present, then from environment variables.
     """
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
     log_api: Annotated[LogApiSettings, Field(default_factory=LogApiSettings)]
     gmail: Annotated[GmailSettings, Field(default_factory=GmailSettings)]
