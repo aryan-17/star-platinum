@@ -1,0 +1,82 @@
+# Service map: api_type / URL prefix / pod prefix → repo + module + entry points
+# Used by Code Context stage to find relevant code for a divergent step.
+
+services:
+  supply-core-new:
+    repo: supply-core-new
+    pod_prefixes:
+      - supply-core
+    api_types:
+      - SUPPLY_CORE
+      - SUPPLY_CORE_APP_LAYER
+      - SUPPLY_CORE_REPO_LAYER
+      - SUPPLY_CORE_ORCHESTRATOR
+    entry_points:
+      SS1_SEARCH:
+        - FlightSearchServiceGrpcImpl
+        - SingleSolutionSearchWorkflow
+      SIS_HOLD:
+        - HoldController
+        - HoldMainWorkflow
+      FARE_BENEFITS:
+        - FareBenefitMapper
+        - FareFamilyService
+    step_to_module:
+      SINGLE_SOLUTION_SEARCH: search
+      HOLD: hold
+      MINI_RULES: rules
+
+  air-sms:
+    repo: air-sms
+    pod_prefixes:
+      - air-sms
+      - me-air-sms
+    api_types:
+      - HOLD_CORE
+      - BOOK
+      - BOOK_HANDLER
+      - GET_SSR
+      - ANCILLARY_OFFERS
+    entry_points:
+      HOLD_CORE:
+        - HoldCoreController
+        - HoldCoreService
+      BOOK:
+        - BookController
+        - BookService
+    step_to_module:
+      HOLD_CORE: hold
+      BOOK: book
+      GET_SSR: ssr
+
+  air-sms-new:
+    repo: air-sms-new
+    pod_prefixes:
+      - air-sms-new
+      - me-air-sms-new
+    api_types:
+      - NEW-SMS
+    apis:
+      - SMS_HOLD
+      - SMS_BOOK
+      - SMS_fetch_Ancillaries
+      - SUPPLIER_BOOK
+      - SUPPLIER_PRICE_QUOTE
+      - SUPPLIER_ANCILLARY_BAGGAGE
+      - SUPPLIER_ANCILLARY_MEAL
+      - SUPPLIER_ANCILLARY_SEAT
+      - findOndWiseFlightCombinations
+    entry_points:
+      SMS_HOLD:
+        - HoldFlightController
+        - HoldFlightService
+      SMS_BOOK:
+        - BookFlightController
+        - BookFlightService
+      SUPPLIER_BOOK:
+        - SupplierBookAdapter
+        - AirArabiaBookAdapter
+    step_to_module:
+      SMS_HOLD: hold
+      SMS_BOOK: book
+      SUPPLIER_BOOK: supplier/book
