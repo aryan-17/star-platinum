@@ -13,7 +13,7 @@ class TestSettings:
         assert settings.gmail.poll_interval_seconds == 60
         assert settings.budgets.investigator_max_iterations == 10
         assert settings.budgets.tokens_per_stage_limit == 50_000
-        assert settings.model.model == "gemini-2.0-flash"
+        assert settings.model.model == "openai/gpt-oss-120b"
         assert settings.output.rca_dir.name == "rca_reports"
         assert settings.output.cache_dir.name == "cache"
 
@@ -26,13 +26,13 @@ class TestSettings:
 
         mp = pytest.MonkeyPatch()
         mp.setenv("LOG_API_TOKEN", "test-token-123")
-        mp.setenv("GEMINI_MODEL", "gemini-2.5-flash")
+        mp.setenv("GROQ_MODEL", "qwen/qwen3.8-27b")
         mp.setenv("INVESTIGATOR_MAX_ITERATIONS", "20")
 
         from oncall_rca.config.settings import LogApiSettings, ModelSettings, BudgetSettings
 
         assert LogApiSettings().token == "test-token-123"
-        assert ModelSettings().model == "gemini-2.5-flash"
+        assert ModelSettings().model == "qwen/qwen3.8-27b"
         assert BudgetSettings().investigator_max_iterations == 20
 
         mp.undo()

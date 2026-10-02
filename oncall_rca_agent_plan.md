@@ -40,7 +40,7 @@ Build an agentic AI system in Python that, for every on-call incident mail:
 | 12 | Output | Markdown file saved locally |
 | 13 | Handoff | Human hands RCA to Claude Code for now; automated later |
 | 14 | Orchestration | LangGraph |
-| 15 | LLM | Single model: Gemini Flash |
+| 15 | LLM | Single model: Groq (`openai/gpt-oss-120b`); switchable via config |
 | 16 | Runtime | User's local machine |
 | 17 | Compliance | No constraints (redaction kept as an optional hook) |
 | 18 | Payload formats | Supplier (airline) calls are SOAP XML; internal calls JSON; SS1 is gRPC protobuf logged as JSON |

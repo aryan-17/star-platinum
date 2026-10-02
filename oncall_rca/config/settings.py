@@ -43,9 +43,9 @@ class RepoSettings(BaseSettings):
 class ModelSettings(BaseSettings):
     """LLM model settings."""
 
-    model_config = {"env_prefix": "GEMINI_"}
+    model_config = {"env_prefix": "GROQ_"}
 
-    model: str = "gemini-2.0-flash"
+    model: str = "openai/gpt-oss-120b"
     api_key: str = ""
 
 

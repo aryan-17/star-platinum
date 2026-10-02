@@ -1,4 +1,4 @@
-"""LLM client wrapper — interface + Gemini Flash implementation.
+"""LLM client wrapper — interface + Groq implementation.
 
 Design principles (§6.1, §12):
 - Every LLM call returns schema-validated JSON (structured output).
@@ -8,6 +8,7 @@ Design principles (§6.1, §12):
 
 from __future__ import annotations
 
+import json
 import time
 import uuid
 from typing import Any, Protocol, TypeVar
@@ -65,23 +66,24 @@ class LLMBudgetExceeded(LLMError):
     """Token or cost budget exceeded."""
 
 
-class GeminiFlashClient:
-    """Gemini Flash client with retries, timeouts, token accounting.
+class GroqClient:
+    """Groq client with retries, timeouts, token accounting.
 
-    Requires GEMINI_API_KEY to be set. Constructed via from_settings().
+    Uses the Groq Python SDK (OpenAI-compatible chat completions).
+    Requires GROQ_API_KEY to be set.
     """
 
     def __init__(
         self,
         *,
         api_key: str,
-        model_name: str = "gemini-2.0-flash",
+        model_name: str = "openai/gpt-oss-120b",
         max_retries: int = 3,
         timeout_seconds: int = 60,
         token_budget: int = 0,
     ) -> None:
         if not api_key:
-            raise LLMError("GEMINI_API_KEY is required")
+            raise LLMError("GROQ_API_KEY is required")
         self._api_key = api_key
         self._model_name = model_name
         self._max_retries = max_retries
@@ -90,7 +92,7 @@ class GeminiFlashClient:
         self._tokens_used = 0
 
     @classmethod
-    def from_settings(cls, settings: Any) -> GeminiFlashClient:
+    def from_settings(cls, settings: Any) -> GroqClient:
         """Create from application Settings."""
         return cls(
             api_key=settings.model.api_key,
@@ -112,38 +114,49 @@ class GeminiFlashClient:
         temperature: float = 0.0,
         max_tokens: int = 4096,
     ) -> T:
-        """Generate structured output from Gemini Flash.
+        """Generate structured output from Groq.
 
-        Uses google.generativeai for the API call.
+        Uses groq SDK for the API call.
         Retries on transient errors. Validates output against response_schema.
         """
-        import google.generativeai as genai
+        from groq import Groq
 
-        genai.configure(api_key=self._api_key)
-        model = genai.GenerativeModel(self._model_name)
+        client = Groq(api_key=self._api_key)
 
         trace_id = str(uuid.uuid4())[:8]
         start = time.monotonic()
         last_error: Exception | None = None
 
+        schema_json = response_schema.model_json_schema()
+        schema_instruction = (
+            f"You MUST respond with valid JSON matching this schema:\n"
+            f"```json\n{json.dumps(schema_json, indent=2)}\n```\n"
+            f"Respond ONLY with the JSON object. No other text."
+        )
+
+        messages: list[dict[str, str]] = []
+        if system:
+            messages.append({"role": "system", "content": f"{system}\n\n{schema_instruction}"})
+        else:
+            messages.append({"role": "system", "content": schema_instruction})
+        messages.append({"role": "user", "content": prompt})
+
         for attempt in range(1, self._max_retries + 1):
             try:
-                full_prompt = f"{system}\n\n{prompt}" if system else prompt
-                response = model.generate_content(
-                    full_prompt,
-                    generation_config=genai.GenerationConfig(
-                        temperature=temperature,
-                        max_output_tokens=max_tokens,
-                        response_mime_type="application/json",
-                        response_schema=response_schema,
-                    ),
+                response = client.chat.completions.create(
+                    model=self._model_name,
+                    messages=messages,
+                    temperature=temperature,
+                    max_completion_tokens=max_tokens,
+                    response_format={"type": "json_object"},
                 )
 
                 elapsed_ms = int((time.monotonic() - start) * 1000)
 
                 # Token accounting
-                input_tokens = getattr(response.usage_metadata, "prompt_token_count", 0)
-                output_tokens = getattr(response.usage_metadata, "candidates_token_count", 0)
+                usage = response.usage
+                input_tokens = usage.prompt_tokens if usage else 0
+                output_tokens = usage.completion_tokens if usage else 0
                 total_tokens = input_tokens + output_tokens
                 self._tokens_used += total_tokens
 
@@ -153,8 +166,14 @@ class GeminiFlashClient:
                     )
 
                 # Parse and validate
-                raw_text = response.text
-                result = response_schema.model_validate_json(raw_text)
+                raw_text = response.choices[0].message.content or ""
+                try:
+                    result = response_schema.model_validate_json(raw_text)
+                except Exception as e:
+                    raise LLMValidationError(
+                        f"Failed to validate LLM output against {response_schema.__name__}: {e}\n"
+                        f"Raw output: {raw_text[:500]}"
+                    ) from e
 
                 # Trace
                 trace_store.record(TraceRecord(
@@ -170,7 +189,7 @@ class GeminiFlashClient:
 
                 return result
 
-            except LLMBudgetExceeded:
+            except (LLMBudgetExceeded, LLMValidationError):
                 raise
             except Exception as e:
                 last_error = e

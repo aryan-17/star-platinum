@@ -5,7 +5,7 @@ description = "Agentic on-call RCA system for automated incident diagnosis"
 requires-python = ">=3.11"
 dependencies = [
     "langgraph>=0.4",
-    "google-generativeai>=0.8",
+    "groq>=0.28",
     "google-api-python-client>=2.0",
     "google-auth-oauthlib>=1.0",
     "pydantic>=2.0",
