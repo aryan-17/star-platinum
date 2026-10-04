@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -48,7 +48,7 @@ class RunState(BaseModel):
     """
 
     run_id: str = Field(description="Unique run identifier")
-    started_at: datetime = Field(default_factory=datetime.utcnow)
+    started_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
 
     # Stage outputs (filled progressively)
     incident: Incident | None = None

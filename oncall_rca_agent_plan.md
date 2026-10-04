@@ -128,7 +128,7 @@ These drive the Evidence stage design.
 ### 6.1 Principles
 
 - **Deterministic where possible, agentic where necessary.** Outer workflow is a fixed state machine; only the Investigator loops autonomously.
-- **Deterministic code finds *where* things diverged; the LLM explains *why*.** Critical given a lighter model (Gemini Flash).
+- **Deterministic code finds *where* things diverged; the LLM explains *why*.** Critical given a lighter model (Groq).
 - **Typed contracts between every stage.**
 - **Every claim cites evidence** (log file + field path, or code file + line).
 
@@ -153,7 +153,7 @@ These drive the Evidence stage design.
  [5] Code Context ───── divergent step → service → repo/module → relevant code
         │
         ▼
- [6] Investigator ───── Gemini Flash tool-calling loop (step + token budget)
+ [6] Investigator ───── Groq tool-calling loop (step + token budget)
         │
         ▼
  [7] Critic ─────────── fresh context: verify citations, list alternatives,
@@ -205,7 +205,7 @@ State is checkpointed after each stage so a failed run resumes from the last com
 - Pulls code that **builds the request** or **parses the response** at the divergent step.
 - **Output:** `CodeContext`.
 
-### 7.6 Investigator (Gemini Flash, LangGraph tool-calling loop)
+### 7.6 Investigator (Groq, LangGraph tool-calling loop)
 - Receives: `EvidencePack`, divergence point, `CodeContext`, relevant skills.
 - Forms competing hypotheses; proves/disproves each with tools.
 - Can fetch additional trip files beyond the playbook if needed.
@@ -213,7 +213,7 @@ State is checkpointed after each stage so a failed run resumes from the last com
 - Structured JSON output validated against `Hypothesis` schema.
 - Uses thinking budget if the Flash version supports it.
 
-### 7.7 Critic (Gemini Flash, fresh context)
+### 7.7 Critic (Groq, fresh context)
 - Sees evidence + hypothesis, **not** the Investigator's reasoning.
 - Mechanically verifies each citation exists and says what is claimed.
 - Lists alternative explanations and contradicting evidence.
@@ -248,7 +248,7 @@ If the two worlds disagree, either supply-core built the hold/book request wrong
 
 ### 8.2 Technique: first divergence
 
-Trace baggage **per journey and per passenger** through the chain below and stop at the first step where the invariant breaks. Deterministic code finds the step; Gemini Flash explains the cause using the surrounding payloads and the code that built or parsed that step.
+Trace baggage **per journey and per passenger** through the chain below and stop at the first step where the invariant breaks. Deterministic code finds the step; Groq explains the cause using the surrounding payloads and the code that built or parsed that step.
 
 ### 8.3 Baggage chain
 
@@ -387,7 +387,7 @@ oncall_rca/
 ├── skills/                # narrative domain know-how, loaded on demand
 ├── prompts/               # versioned prompts per stage
 ├── guardrails/            # injection defence, output validation, budgets, redaction hook
-├── llm/                   # single Gemini Flash client: retries, caching, token accounting
+├── llm/                   # single Groq client: retries, caching, token accounting
 ├── observability/         # traces, per-step logs, cost, latency
 ├── evals/
 │   ├── golden_incidents/        # cached trips + known RCAs ⏳
@@ -483,7 +483,7 @@ Links to files in ./evidence/
 | Poll interval | ~60s |
 | Log API base URL, token, user | Token in `.env` |
 | Repo clone paths + primary branch per service | `supply-core-new`, `air-sms`, `air-sms-new` |
-| Model | Gemini Flash; thinking budget per stage if supported |
+| Model | Groq; thinking budget per stage if supported |
 | Budgets | Investigator iterations, tokens/stage, wall-clock/run |
 | Output paths | `rca_reports/`, `cache/` |
 

@@ -7,7 +7,7 @@
 ## Project Context
 
 **Star Platinum** — On-call RCA agent for automated incident diagnosis.
-- Python 3.11+, LangGraph orchestration, Gemini Flash LLM
+- Python 3.11+, LangGraph orchestration, Groq LLM
 - Design plan: `oncall_rca_agent_plan.md`
 - Project structure: `oncall_rca/` (see plan §11)
 
@@ -103,7 +103,7 @@ These come from the design plan (§6.1, §12) and must never be violated:
 | # | Invariant | Why |
 |---|-----------|-----|
 | 1 | Raw logs never go directly to the LLM | ~300 files/trip. Context window blown, cost explodes. EvidencePack with drill-down handles instead |
-| 2 | Deterministic code finds divergence; LLM explains why | Gemini Flash is lighter — don't ask it to find needles in haystacks |
+| 2 | Deterministic code finds divergence; LLM explains why | Groq is lighter — don't ask it to find needles in haystacks |
 | 3 | Every LLM output is schema-validated JSON | Unstructured output breaks typed contracts between stages |
 | 4 | Every claim in the RCA cites evidence | Log file + field path, or code file + line. No unsupported assertions |
 | 5 | Critic gets fresh context, never sees Investigator reasoning | Independent verification requires independence |

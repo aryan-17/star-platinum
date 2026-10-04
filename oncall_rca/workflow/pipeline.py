@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -61,7 +61,7 @@ def run_pipeline(
     out_dir = output_dir or settings.output.rca_dir
 
     run_id = str(uuid.uuid4())[:12]
-    state = RunState(run_id=run_id, started_at=datetime.utcnow())
+    state = RunState(run_id=run_id, started_at=datetime.now(tz=UTC))
 
     # Stage 1: Incident (synthetic if not provided)
     state = _run_stage(state, "intake", lambda: _intake(trip_id, incident))
@@ -116,7 +116,7 @@ def _intake(trip_id: str, incident: Incident | None) -> Incident:
         trip_ref=trip_id,
         incident_type=IncidentType.BAGGAGE_MISMATCH,
         reported_symptom="Manual pipeline run",
-        received_at=datetime.utcnow(),
+        received_at=datetime.now(tz=UTC),
     )
 
 
@@ -144,14 +144,14 @@ def _run_stage(state: RunState, stage_name: str, fn: Any) -> RunState:
     record = StageRecord(
         stage=stage_name,
         status=StageStatus.RUNNING,
-        started_at=datetime.utcnow(),
+        started_at=datetime.now(tz=UTC),
     )
 
     try:
         result = fn()
         record = record.model_copy(update={
             "status": StageStatus.COMPLETED,
-            "completed_at": datetime.utcnow(),
+            "completed_at": datetime.now(tz=UTC),
         })
 
         # Map result to the right state field
@@ -172,11 +172,11 @@ def _run_stage(state: RunState, stage_name: str, fn: Any) -> RunState:
         record = record.model_copy(update={
             "status": StageStatus.FAILED,
             "error": str(e),
-            "completed_at": datetime.utcnow(),
+            "completed_at": datetime.now(tz=UTC),
         })
         return state.model_copy(update={"stages": [*state.stages, record]})
 
 
 def _add_stage_record(state: RunState, stage: str, status: StageStatus) -> RunState:
-    record = StageRecord(stage=stage, status=status, completed_at=datetime.utcnow())
+    record = StageRecord(stage=stage, status=status, completed_at=datetime.now(tz=UTC))
     return state.model_copy(update={"stages": [*state.stages, record]})
