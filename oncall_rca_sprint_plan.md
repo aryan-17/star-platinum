@@ -23,7 +23,7 @@ Software built in layers always uses what came before, so independence here mean
 | **Contracts frozen in Sprint 0** | All schemas (`Incident`, `EvidencePack`, `CodeContext`, `Hypothesis`, `CriticReport`, `RCADoc`, `RunState`) are defined and versioned before any feature work. Later sprints fill them in; they don't redesign them. |
 | **Additive-only change rule** | After a contract is frozen, only new optional fields may be added. A breaking change requires a new version alongside the old one, never an edit in place. |
 | **Fixture-based testing** | Every sprint is tested against cached fixtures (real trip files, hand-built EvidencePacks, sample mails), so it can be verified without upstream or downstream sprints running live. |
-| **Risk spikes up front** | Assumptions that could force a rewrite (Gemini Flash tool-calling quality, SOAP parsing, Gmail API access, VPN reachability from Python) are tested in Sprint 0, before anything is built on them. |
+| **Risk spikes up front** | Assumptions that could force a rewrite (Groq tool-calling quality, SOAP parsing, Gmail API access, VPN reachability from Python) are tested in Sprint 0, before anything is built on them. |
 | **Permanent regression suite** | Each sprint's tests join the suite and must pass in every later sprint. Nothing that worked can silently break. |
 | **Entry criteria** | Information a sprint needs (e.g. SOAP field paths) must be in hand *before* it starts, so it is never built on guesses that later need undoing. |
 | **Decision log** | Every design decision is recorded with its date and reason. Reopening a decision is an explicit act, not drift. |
@@ -66,18 +66,18 @@ Every sprint below follows this structure:
 
 **Entry criteria**
 - Design plan approved.
-- Gemini API key available; VPN access from the development machine.
+- Groq API key available; VPN access from the development machine.
 
 **In scope**
 - Project structure as in design §11 (empty modules where needed).
-- Configuration system: `.env` for secrets (log API token, Gemini key), config file for paths, budgets, model, repo list.
+- Configuration system: `.env` for secrets (log API token, Groq key), config file for paths, budgets, model, repo list.
 - **All schemas defined and versioned (v1):** `Incident`, `TripIndex`, `CallNode`, `EvidenceFact`, `EvidencePack`, `CodeContext`, `Hypothesis`, `CriticReport`, `RCADoc`, `RunState`.
-- Single LLM client wrapper for Gemini Flash: retries, timeouts, token accounting, structured (schema-validated) output.
+- Single LLM client wrapper for Groq: retries, timeouts, token accounting, structured (schema-validated) output.
 - Observability base: run IDs, structured logging, per-call trace records (inputs, outputs, tokens, latency).
 - Test harness and fixture layout (`tests/fixtures/`, `evals/golden_incidents/`).
 - Fixture capture: cache the full sample trip `260802431929` (index + all files) as the first fixture.
 - **Risk spikes** (throwaway code, findings documented):
-  1. Gemini Flash tool-calling: can it run a 5–10 step tool loop reliably with structured output?
+  1. Groq tool-calling: can it run a 5–10 step tool loop reliably with structured output?
   2. Parse one SOAP supplier payload and one gRPC-JSON payload from the fixture.
   3. Gmail API: authenticate and list messages under a test label.
   4. Log API reachability from Python over VPN, with the static token.
@@ -91,7 +91,7 @@ Every sprint below follows this structure:
 
 **Standalone demo**
 - Run the test suite (schemas validate example objects).
-- Make one schema-validated Gemini Flash call and see its trace record.
+- Make one schema-validated Groq call and see its trace record.
 
 **Exit criteria**
 - [ ] All schemas reviewed and signed off.
@@ -241,7 +241,7 @@ Every sprint below follows this structure:
 **Entry criteria:** Sprints 2 and 3 closed.
 
 **In scope**
-- Investigator: LangGraph tool-calling loop on Gemini Flash, using Sprint 1–3 tools (`fetch_trip_file`, `get_evidence_fact`, code tools).
+- Investigator: LangGraph tool-calling loop on Groq, using Sprint 1–3 tools (`fetch_trip_file`, `get_evidence_fact`, code tools).
 - Budgets: max iterations, tokens, wall-clock; budget exhaustion yields a marked result, never a silent failure.
 - Hypothesis generation with competing alternatives; divergence-class hints from the playbook.
 - Critic: fresh context, mechanical citation verification, alternatives, confidence rubric (High / Medium / Low). Annotates, never blocks.
@@ -393,7 +393,7 @@ Each of these adds new files or new optional fields; none changes Phase 1 contra
 
 | Input | Needed by |
 |-------|-----------|
-| Gemini API key, VPN access | Sprint 0 |
+| Groq API key, VPN access | Sprint 0 |
 | Primary branch per repo | Sprint 2 |
 | `SUPPLIER_ANCILLARY_BAGGAGE` free-tier field | Sprint 3 |
 | Baggage in `SUPPLIER_BOOK` req/res | Sprint 3 |

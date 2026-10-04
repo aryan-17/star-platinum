@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 
 logger = logging.getLogger("oncall_rca.observability")
 
@@ -23,7 +23,7 @@ class TraceRecord:
     latency_ms: int = 0
     success: bool = True
     error: str = ""
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
     metadata: dict[str, str] = field(default_factory=dict)
 
 
