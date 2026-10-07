@@ -25,10 +25,10 @@ class Incident(BaseModel):
     message_id: str = Field(description="Gmail message ID")
     thread_id: str = Field(description="Gmail thread ID for dedup")
     trip_ref: str = Field(
-        description="12-digit trip reference extracted from mail",
+        description="12-13 digit trip reference extracted from mail",
         min_length=12,
-        max_length=12,
-        pattern=r"^\d{12}$",
+        max_length=13,
+        pattern=r"^\d{12,13}$",
     )
     incident_type: IncidentType = Field(description="Classified incident type")
     reported_symptom: str = Field(description="Symptom text extracted from mail body")
