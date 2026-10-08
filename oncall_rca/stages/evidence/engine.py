@@ -16,6 +16,7 @@ from oncall_rca.stages.evidence.call_tree import build_call_tree, detect_supplie
 from oncall_rca.stages.evidence.divergence import find_first_divergence
 from oncall_rca.stages.evidence.extractors.base import get_extractor
 from oncall_rca.stages.evidence.index_normaliser import normalise_trip_index
+from oncall_rca.stages.evidence.validator import validate_trip, ValidationReport
 from oncall_rca.tools.cache import TripCache
 from oncall_rca.tools.log_api import detect_format, parse_payload
 
@@ -80,6 +81,20 @@ def build_evidence_pack(
             divergence_point = dp
             break  # report first divergence found
 
+    # Phase 4: Run fare/baggage/FBC validation checks
+    validation_report = validate_trip(trip_id, raw_data, cache)
+    validation_facts, validation_anomalies = _validation_to_evidence(validation_report)
+    all_facts.extend(validation_facts)
+    all_anomalies = trip_index.anomalies + validation_anomalies
+
+    # Re-check divergence with validation facts included
+    divergence_point = None
+    for journey in trip_index.journeys:
+        dp = find_first_divergence(all_facts, journey.journey_index)
+        if dp is not None:
+            divergence_point = dp
+            break
+
     # Build facts_by_journey
     facts_by_journey: dict[int, list[EvidenceFact]] = {}
     for fact in all_facts:
@@ -89,11 +104,51 @@ def build_evidence_pack(
         trip_index=trip_index,
         facts=all_facts,
         divergence_point=divergence_point,
-        anomalies=trip_index.anomalies,
+        anomalies=all_anomalies,
         red_herrings=_RED_HERRINGS,
         supplier=trip_index.journeys[0].supplier if trip_index.journeys else "",
         facts_by_journey=facts_by_journey,
     )
+
+
+def _validation_to_evidence(
+    report: ValidationReport,
+) -> tuple[list[EvidenceFact], list[str]]:
+    """Convert validation check results into EvidenceFacts and anomaly strings.
+
+    Failed checks become facts (so the Investigator can see them) and anomalies.
+    Passed checks become facts too (for completeness in the RCA).
+    """
+    from oncall_rca.schemas.evidence import Citation
+
+    facts: list[EvidenceFact] = []
+    anomalies: list[str] = []
+
+    for jv in report.journeys:
+        for check in jv.checks:
+            if check.status == "skip":
+                continue
+
+            fact = EvidenceFact(
+                fact_id=f"j{jv.journey_index}_val_{check.name.replace(' ', '_').lower()}",
+                journey_index=jv.journey_index,
+                step=BaggageChainStep.HOLD_CORE_RESPONSE,  # closest match
+                label=f"Validation: {check.name}",
+                value=f"{check.status.upper()}: expected={check.expected}, actual={check.actual}",
+                citation=Citation(
+                    source_file=check.source_actual or check.source_expected,
+                    field_path="",
+                    excerpt=check.detail or f"{check.expected} vs {check.actual}",
+                ),
+            )
+            facts.append(fact)
+
+            if check.status == "fail":
+                anomalies.append(
+                    f"VALIDATION FAIL [{jv.route}]: {check.name} — {check.detail or check.actual}"
+                )
+
+    return facts, anomalies
 
 
 def _extract_journey_facts(
