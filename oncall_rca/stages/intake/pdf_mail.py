@@ -19,7 +19,7 @@ _TRIP_REF_PATTERN = re.compile(r"\b(\d{12,13})\b")
 _BAGGAGE_KEYWORDS = [
     "baggage", "luggage", "checked bag", "cabin bag", "kg",
     "piece", "allowance", "no baggage", "baggage mismatch",
-    "paid at airport", "denied baggage",
+    "paid at airport", "denied baggage", "variance",
 ]
 
 
@@ -115,18 +115,41 @@ def _extract_symptom(text: str) -> str:
             if in_body and symptom_lines:
                 break  # end of first paragraph
             continue
-        if stripped.startswith(("Regards", "----", "[Quoted", "To unsubscribe", "You received")):
+        if stripped.startswith((
+            "Regards", "----", "[Quoted", "To unsubscribe", "You received",
+            "BR", "Sincerely", "Best", "Thanks",
+        )):
             if symptom_lines:
                 break
             continue
         if stripped.startswith(("Dear", "Dears", "Hi ", "Hello")):
             in_body = True
             continue
-        if stripped.startswith(("Reminder", "+air-supplier", "+Karim", "+Hussien", "@")):
+        if stripped.startswith((
+            "Reminder", "+air-supplier", "+Karim", "+Hussien", "+Supplier", "@",
+        )):
+            continue
+        # Stop at URLs and page footers
+        if stripped.startswith(("http://", "https://")) or re.match(r"^\d{1,2}/\d{1,2}$", stripped):
+            if symptom_lines:
+                break
+            continue
+        # Stop at timestamp lines (page headers from Gmail PDF)
+        if re.match(r"^\d{2}/\d{2}/\d{4},\s+\d{2}:\d{2}$", stripped):
+            if symptom_lines:
+                break
+            continue
+
+        # Stop at email date headers (e.g. "Tue, Sep 29, 2026 at 5:49 AM")
+        if re.match(r"^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s", stripped):
+            if symptom_lines:
+                break
             continue
 
         # Skip email metadata lines
-        if any(x in stripped for x in ["@flyin.com>", "wrote:", "Cc:", "To:", "From:", "Reply-To:"]):
+        if any(x in stripped for x in [
+            "@flyin.com>", "wrote:", "Cc:", "To:", "From:", "Reply-To:",
+        ]):
             continue
 
         if in_body or any(kw in stripped.lower() for kw in _BAGGAGE_KEYWORDS):
