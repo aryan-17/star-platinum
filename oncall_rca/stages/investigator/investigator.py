@@ -7,13 +7,11 @@ proves/disproves each with tools. Hard limits on iterations/tokens/time.
 from __future__ import annotations
 
 import time
-from typing import Any
 
-from oncall_rca.llm.client import LLMClient, LLMBudgetExceeded
+from oncall_rca.llm.client import LLMBudgetExceeded, LLMClient
 from oncall_rca.schemas.code_context import CodeContext
 from oncall_rca.schemas.evidence import EvidencePack
 from oncall_rca.schemas.hypothesis import Hypothesis
-
 
 _SYSTEM_PROMPT = """You are an expert flight booking systems investigator.
 
@@ -32,6 +30,8 @@ Compare them. If they disagree, either supply-core built the request wrongly
 - If you cannot determine the root cause with high confidence, say so
 - Do NOT blame the session-expiry retry (err.2-maxico) — that is expected behaviour
 - Do NOT use journeyFareSummary.passengerBaggageDetails — it is fare metadata, not booked baggage
+- INVESTIGATE EVERY JOURNEY. A trip may have multiple journeys (e.g. outbound + return).
+  Analyse each journey independently — the bug may affect only one leg.
 
 ## Output
 Respond with a JSON object matching the Hypothesis schema."""
@@ -94,10 +94,15 @@ def _build_prompt(evidence: EvidencePack, code_context: CodeContext) -> str:
     parts.append(f"Supplier: {evidence.supplier}")
     parts.append(f"Journeys: {len(evidence.trip_index.journeys)}")
 
+    # Journey details
+    for journey in evidence.trip_index.journeys:
+        route = f"{journey.origin} → {journey.destination}" if journey.origin else "unknown"
+        parts.append(f"  Journey {journey.journey_index}: {route}")
+
     # Divergence point
     if evidence.divergence_point:
         dp = evidence.divergence_point
-        parts.append(f"\n## Divergence Point")
+        parts.append("\n## Divergence Point")
         parts.append(f"Journey {dp.journey_index}, Step: {dp.step.value}")
         parts.append(f"Expected: {dp.expected_value}")
         parts.append(f"Actual: {dp.actual_value}")
@@ -105,15 +110,28 @@ def _build_prompt(evidence: EvidencePack, code_context: CodeContext) -> str:
         parts.append(f"Citation: {dp.citation.source_file} @ {dp.citation.field_path}")
     else:
         parts.append("\n## No divergence found in the core baggage chain")
-        parts.append("All steps are consistent. Investigate if the issue is downstream or in the ancillary path.")
-
-    # Evidence facts
-    parts.append(f"\n## Evidence Facts ({len(evidence.facts)} total)")
-    for fact in evidence.facts[:30]:  # limit to avoid context overflow
         parts.append(
-            f"- [{fact.step.value}] {fact.label}: {fact.value} "
-            f"(source: {fact.citation.source_file} @ {fact.citation.field_path})"
+            "All steps are consistent. Investigate if the issue is downstream "
+            "or in the ancillary path."
         )
+
+    # Evidence facts grouped by journey
+    facts_per_journey = _max_facts_per_journey(evidence)
+    for journey in evidence.trip_index.journeys:
+        ji = journey.journey_index
+        journey_facts = evidence.facts_by_journey.get(ji, [])
+        if not journey_facts:
+            parts.append(f"\n## Journey {ji} — no evidence facts extracted")
+            continue
+
+        parts.append(f"\n## Journey {ji} Evidence ({len(journey_facts)} facts)")
+        for fact in journey_facts[:facts_per_journey]:
+            parts.append(
+                f"- [{fact.step.value}] {fact.label}: {fact.value} "
+                f"(source: {fact.citation.source_file} @ {fact.citation.field_path})"
+            )
+        if len(journey_facts) > facts_per_journey:
+            parts.append(f"  ... and {len(journey_facts) - facts_per_journey} more facts")
 
     # Anomalies
     if evidence.anomalies:
@@ -139,3 +157,10 @@ def _build_prompt(evidence: EvidencePack, code_context: CodeContext) -> str:
             parts.append(f"- {cf.repo}/{cf.path}")
 
     return "\n".join(parts)
+
+
+def _max_facts_per_journey(evidence: EvidencePack) -> int:
+    """Calculate max facts per journey to stay within context budget."""
+    n_journeys = max(len(evidence.trip_index.journeys), 1)
+    # 60 total facts budget, split evenly across journeys
+    return max(15, 60 // n_journeys)
