@@ -6,32 +6,39 @@ No LLM in this path — all deterministic.
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from typing import Any
 
-from oncall_rca.schemas.evidence import EvidenceFact, EvidencePack
-from oncall_rca.schemas.trip_index import TripIndex
+import oncall_rca.stages.evidence.extractors.book
+
+# Import extractors to register them
+import oncall_rca.stages.evidence.extractors.hold_core
+import oncall_rca.stages.evidence.extractors.sis_hold
+import oncall_rca.stages.evidence.extractors.sms_supplier_hold
+import oncall_rca.stages.evidence.extractors.ss1
+import oncall_rca.stages.evidence.extractors.supplier_book  # noqa: F401
+
+# Map API names to baggage chain steps for extraction
+from oncall_rca.schemas.evidence import BaggageChainStep, EvidenceFact, EvidencePack
 from oncall_rca.stages.evidence.call_tree import build_call_tree, detect_supplier, split_journeys
 from oncall_rca.stages.evidence.divergence import find_first_divergence
 from oncall_rca.stages.evidence.extractors.base import get_extractor
+from oncall_rca.stages.evidence.extractors.ss1_consistency import check_ss1_consistency
 from oncall_rca.stages.evidence.index_normaliser import normalise_trip_index
-from oncall_rca.stages.evidence.validator import validate_trip, ValidationReport
+from oncall_rca.stages.evidence.validator import ValidationReport, validate_trip
 from oncall_rca.tools.cache import TripCache
-from oncall_rca.tools.log_api import detect_format, parse_payload
+from oncall_rca.tools.log_api import parse_payload
 
-# Import extractors to register them
-import oncall_rca.stages.evidence.extractors.hold_core  # noqa: F401
-import oncall_rca.stages.evidence.extractors.supplier_book  # noqa: F401
-import oncall_rca.stages.evidence.extractors.book  # noqa: F401
-
-# Map API names to baggage chain steps for extraction
-from oncall_rca.schemas.evidence import BaggageChainStep
-
-_API_TO_STEP: dict[str, BaggageChainStep] = {
-    "HOLD_CORE": BaggageChainStep.HOLD_CORE_RESPONSE,
-    "SUPPLIER_BOOK": BaggageChainStep.SUPPLIER_BOOK,
-    "BOOK": BaggageChainStep.BOOK_RESPONSE,
+_API_TO_STEPS: dict[str, list[BaggageChainStep]] = {
+    "SINGLE_SOLUTION_SEARCH": [BaggageChainStep.SS1_DISPLAYED],
+    "SINGLE_SOL_SEARCH": [BaggageChainStep.SS1_DISPLAYED],
+    "HOLD": [BaggageChainStep.SIS_HOLD_REQUEST],
+    "SMS_SUPPLIER_HOLD": [
+        BaggageChainStep.SUPPLIER_BAGGAGE_HOLD,
+        BaggageChainStep.SUPPLIER_PRICE_HOLD,
+    ],
+    "HOLD_CORE": [BaggageChainStep.HOLD_CORE_RESPONSE],
+    "SUPPLIER_BOOK": [BaggageChainStep.SUPPLIER_BOOK],
+    "BOOK": [BaggageChainStep.BOOK_RESPONSE],
 }
 
 # Known red herrings
@@ -72,6 +79,11 @@ def build_evidence_pack(
             cache,
         )
         all_facts.extend(journey_facts)
+
+    # Phase 2b: SS1 consistency check across multiple SS1 calls
+    for journey in trip_index.journeys:
+        consistency_facts = check_ss1_consistency(all_facts, journey.journey_index)
+        all_facts.extend(consistency_facts)
 
     # Phase 3: Find divergence per journey
     divergence_point = None
@@ -161,19 +173,25 @@ def _extract_journey_facts(
     facts: list[EvidenceFact] = []
 
     for call in calls:
-        step = _API_TO_STEP.get(call.api)
-        if step is None:
-            continue
-
-        extractor = get_extractor(step)
-        if extractor is None:
+        steps = _API_TO_STEPS.get(call.api)
+        if steps is None:
             continue
 
         # Try to read response file from cache
-        if call.res_file and cache.has_file(trip_id, call.res_file.file_name):
+        if not (call.res_file and cache.has_file(trip_id, call.res_file.file_name)):
+            continue
+
+        try:
+            content_bytes = cache.read_file(trip_id, call.res_file.file_name)
+            parsed = parse_payload(content_bytes)
+        except Exception:
+            continue  # skip unparseable files
+
+        for step in steps:
+            extractor = get_extractor(step)
+            if extractor is None:
+                continue
             try:
-                content_bytes = cache.read_file(trip_id, call.res_file.file_name)
-                parsed = parse_payload(content_bytes)
                 extracted = extractor.extract(
                     parsed,
                     journey_index=journey_index,
@@ -181,6 +199,6 @@ def _extract_journey_facts(
                 )
                 facts.extend(extracted)
             except Exception:
-                pass  # skip unparseable files
+                pass  # skip extraction errors
 
     return facts
