@@ -1,11 +1,11 @@
 """Extractor for SINGLE_SOLUTION_SEARCH (SS1) — JSON payload.
 
-Extracts per-fare-family baggage info from fareBenefits and baggageFareType.
-Also compares multiple SS1 calls for consistency (SS1_CONSISTENCY).
+Extracts per-fare-family baggage info — fareBenefits first (actual allowance),
+then baggageFareType (flag). CHECK_IN baggage extracted before CABIN.
 
 Real structure:
-  flightSolutions[].fareFamilies[].journeyFareInfo.<route>.baggageFareType
-  flightSolutions[].fareFamilies[].fareBenefits[].baggageAllowance
+  flightSolutions[].fareFamilies[].fareBenefits[].baggageAllowance  (primary)
+  flightSolutions[].fareFamilies[].journeyFareInfo.<route>.baggageFareType  (secondary)
   flightSolutions[].fareFamilies[].comboFbc
 """
 
@@ -58,40 +58,21 @@ class SS1DisplayedExtractor:
         combo_fbc = ff.get("comboFbc", "unknown")
         group_name = ff.get("groupName", "unknown")
 
-        # baggageFareType from journeyFareInfo
-        journey_fare_info = ff.get("journeyFareInfo", {})
-        if isinstance(journey_fare_info, dict):
-            for route, jfi in journey_fare_info.items():
-                if not isinstance(jfi, dict):
-                    continue
-                bag_fare_type = jfi.get("baggageFareType", "")
-                if bag_fare_type:
-                    fid = f"j{journey_index}_ss1_{_safe_id(combo_fbc)}_bagtype"
-                    facts.append(EvidenceFact(
-                        fact_id=fid,
-                        journey_index=journey_index,
-                        step=self.step,
-                        label=f"SS1 baggageFareType ({group_name}, {combo_fbc})",
-                        value=bag_fare_type,
-                        citation=Citation(
-                            source_file=source_file,
-                            field_path=(
-                                f"flightSolutions[].fareFamilies[comboFbc={combo_fbc}]"
-                                f".journeyFareInfo.{route}.baggageFareType"
-                            ),
-                            excerpt=bag_fare_type,
-                        ),
-                    ))
-
-        # fareBenefits — extract BAGGAGE benefits
+        # PRIMARY: fareBenefits — actual baggage allowance (CHECK_IN first, then CABIN)
         benefits = ff.get("fareBenefits", [])
         if isinstance(benefits, list):
-            for benefit in benefits:
-                if not isinstance(benefit, dict):
-                    continue
-                if benefit.get("benefitType") != "BAGGAGE":
-                    continue
+            baggage_benefits = [
+                b for b in benefits
+                if isinstance(b, dict) and b.get("benefitType") == "BAGGAGE"
+            ]
+            # Sort: BAGGAGE_CHECK_IN before BAGGAGE_CABIN
+            baggage_benefits.sort(
+                key=lambda b: 0 if b.get("baggageAllowance", {}).get(
+                    "baggageType", ""
+                ) == "BAGGAGE_CHECK_IN" else 1
+            )
 
+            for benefit in baggage_benefits:
                 allowance = benefit.get("baggageAllowance", {})
                 if not isinstance(allowance, dict):
                     continue
@@ -125,6 +106,31 @@ class SS1DisplayedExtractor:
                         excerpt=value,
                     ),
                 ))
+
+        # SECONDARY: baggageFareType flag from journeyFareInfo
+        journey_fare_info = ff.get("journeyFareInfo", {})
+        if isinstance(journey_fare_info, dict):
+            for route, jfi in journey_fare_info.items():
+                if not isinstance(jfi, dict):
+                    continue
+                bag_fare_type = jfi.get("baggageFareType", "")
+                if bag_fare_type:
+                    fid = f"j{journey_index}_ss1_{_safe_id(combo_fbc)}_bagtype"
+                    facts.append(EvidenceFact(
+                        fact_id=fid,
+                        journey_index=journey_index,
+                        step=self.step,
+                        label=f"SS1 baggageFareType ({group_name}, {combo_fbc})",
+                        value=bag_fare_type,
+                        citation=Citation(
+                            source_file=source_file,
+                            field_path=(
+                                f"flightSolutions[].fareFamilies[comboFbc={combo_fbc}]"
+                                f".journeyFareInfo.{route}.baggageFareType"
+                            ),
+                            excerpt=bag_fare_type,
+                        ),
+                    ))
 
         return facts
 
