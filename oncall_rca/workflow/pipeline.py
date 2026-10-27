@@ -69,8 +69,11 @@ def run_pipeline(
     # Stage 2: Evidence
     state = _run_stage(state, "evidence", lambda: _evidence(trip_id, settings, cache, offline))
 
-    # Stage 3: Code Context (stub — needs actual repos)
-    state = _run_stage(state, "code_context", lambda: CodeContext())
+    # Stage 3: Code Context — uses repo sync + builder if repos configured
+    state = _run_stage(
+        state, "code_context",
+        lambda: _code_context(state.evidence_pack, settings),
+    )
 
     # Stage 4: Investigator
     if state.evidence_pack is not None:
@@ -118,6 +121,34 @@ def _intake(trip_id: str, incident: Incident | None) -> Incident:
         reported_symptom="Manual pipeline run",
         received_at=datetime.now(tz=UTC),
     )
+
+
+def _code_context(
+    evidence_pack: EvidencePack | None,
+    settings: Settings,
+) -> CodeContext:
+    """Build code context from repos if configured, otherwise empty."""
+    if evidence_pack is None or evidence_pack.divergence_point is None:
+        return CodeContext()
+
+    try:
+        from oncall_rca.stages.code_context.builder import build_code_context
+        from oncall_rca.stages.repo_sync.sync import sync_repos
+
+        repo_states = sync_repos(settings)
+        if not repo_states:
+            return CodeContext()
+
+        dp = evidence_pack.divergence_point
+        return build_code_context(
+            step_api=dp.step.value,
+            step_api_type="",
+            repo_states=repo_states,
+            incident_date="",
+        )
+    except Exception:
+        # Repos not configured or not cloned — degrade gracefully
+        return CodeContext()
 
 
 def _evidence(
