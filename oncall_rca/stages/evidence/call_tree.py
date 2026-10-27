@@ -101,6 +101,11 @@ def split_journeys(trip_index: TripIndex) -> TripIndex:
     # Also map SMS_HOLD hosts to journeys by matching time windows
     _map_hold_hosts(calls, host_to_journey)
 
+    # Step 2b: Detect additional journeys from SMS_SUPPLIER_HOLD hosts not yet mapped.
+    # Return trips often have 2 SMS_SUPPLIER_HOLD calls on different hosts but only
+    # 1 SMS_BOOK (the outbound). Each unmapped SMS_SUPPLIER_HOLD host = another journey.
+    _add_journeys_from_supplier_holds(calls, journeys, host_to_journey)
+
     # Step 3: Attribute calls to journeys by host
     for call in calls:
         if call.host in host_to_journey:
@@ -113,7 +118,7 @@ def split_journeys(trip_index: TripIndex) -> TripIndex:
         j = j.model_copy(update={"calls": j_calls})
         journeys[j.journey_index] = j
 
-    # If no SMS_BOOK found, create a single default journey
+    # If no journeys detected, create a single default journey
     if not journeys:
         supplier = _detect_supplier_from_domain(calls)
         journeys.append(Journey(
@@ -162,7 +167,9 @@ def _detect_supplier_from_calls(calls: list[CallNode], host: str) -> str:
     """Detect supplier from external calls made by a specific host."""
     for call in calls:
         if call.host == host and call.is_external:
-            return _domain_to_supplier(call.url)
+            supplier = _domain_to_supplier(call.url)
+            if supplier:
+                return supplier
     return ""
 
 
@@ -181,6 +188,73 @@ def _domain_to_supplier(url: str) -> str:
     for domain, supplier in _SUPPLIER_DOMAIN_MAP.items():
         if domain in url:
             return supplier
+    return ""
+
+
+def _add_journeys_from_supplier_holds(
+    calls: list[CallNode],
+    journeys: list[Journey],
+    host_to_journey: dict[str, int],
+) -> None:
+    """Detect additional journeys from SMS_SUPPLIER_HOLD hosts not already mapped.
+
+    Return trips often have multiple SMS_SUPPLIER_HOLD calls on different hosts
+    (one per journey leg) but only one SMS_BOOK. Each unmapped host whose supplier
+    doesn't match any existing journey = a separate journey. If the supplier matches
+    an existing journey, merge the host into that journey.
+    """
+    known_hosts = set(host_to_journey.keys())
+
+    # Track which suppliers already have a journey
+    supplier_to_journey: dict[str, int] = {}
+    for j in journeys:
+        if j.supplier:
+            supplier_to_journey[j.supplier] = j.journey_index
+
+    for call in calls:
+        if call.api != "SMS_SUPPLIER_HOLD":
+            continue
+        if call.host in known_hosts:
+            continue
+
+        # Detect supplier from this host's calls or URL
+        supplier = _detect_supplier_from_calls(calls, call.host)
+        if not supplier:
+            supplier = _detect_supplier_from_hold_url(call.url)
+
+        # If supplier matches an existing journey, merge host into it
+        if supplier and supplier in supplier_to_journey:
+            j_idx = supplier_to_journey[supplier]
+            host_to_journey[call.host] = j_idx
+            known_hosts.add(call.host)
+            continue
+
+        # New journey for this supplier/host
+        idx = len(journeys)
+        journeys.append(Journey(
+            journey_index=idx,
+            supplier=supplier,
+            supplier_detected_by=f"url:sms_supplier_hold_host:{call.host}",
+        ))
+        host_to_journey[call.host] = idx
+        known_hosts.add(call.host)
+        if supplier:
+            supplier_to_journey[supplier] = idx
+
+
+def _detect_supplier_from_hold_url(url: str) -> str:
+    """Detect supplier from SMS_SUPPLIER_HOLD URL credential key."""
+    if not url:
+        return ""
+    url_lower = url.lower()
+    if "air_arabia" in url_lower or "airarabia" in url_lower:
+        return "air_arabia"
+    if "amadeus" in url_lower:
+        return "amadeus"
+    if "sabre" in url_lower:
+        return "sabre"
+    if "flydubai" in url_lower:
+        return "flydubai"
     return ""
 
 
