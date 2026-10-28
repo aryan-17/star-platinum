@@ -24,6 +24,16 @@ air-sms = what was actually booked (booked world)
 Compare them. If they disagree, either supply-core built the request wrongly
 (our bug) or the supplier returned something different (supplier-side).
 
+## Fare comparison — START HERE
+Your root cause MUST begin by comparing the fare the user asked to book vs the fare
+actually booked, for EACH journey. Trace the fare through the chain:
+1. SS1 (displayed): which fare family / comboFbc / baggageFareType did the user see?
+2. SIS-HOLD: which fareId / comboFbc was sent to the supplier for hold?
+3. SMS_SUPPLIER_HOLD: which fareId came back? What baggage did it return?
+4. BOOK: which fare was actually booked?
+If the fareId or comboFbc changes between steps, THAT is the divergence. Name the
+exact step where the fare switched and explain why.
+
 ## Rules
 - Every claim MUST cite evidence: (log file + field path) or (code file + line)
 - Form competing hypotheses and rule them out with evidence
@@ -99,6 +109,12 @@ def _build_prompt(evidence: EvidencePack, code_context: CodeContext) -> str:
         route = f"{journey.origin} → {journey.destination}" if journey.origin else "unknown"
         parts.append(f"  Journey {journey.journey_index}: {route}")
 
+    # Fare chain comparison per journey
+    fare_summary = _build_fare_chain_summary(evidence)
+    if fare_summary:
+        parts.append("\n## Fare Chain Comparison (displayed → held → booked)")
+        parts.extend(fare_summary)
+
     # Divergence point
     if evidence.divergence_point:
         dp = evidence.divergence_point
@@ -164,3 +180,55 @@ def _max_facts_per_journey(evidence: EvidencePack) -> int:
     n_journeys = max(len(evidence.trip_index.journeys), 1)
     # 60 total facts budget, split evenly across journeys
     return max(15, 60 // n_journeys)
+
+
+def _build_fare_chain_summary(evidence: EvidencePack) -> list[str]:
+    """Build a per-journey fare chain: SS1 → SIS-HOLD → SUPPLIER_HOLD → BOOK.
+
+    Extracts fareId, comboFbc, and baggageFareType at each step so the LLM
+    can immediately see where the fare switches.
+    """
+    from oncall_rca.schemas.evidence import BaggageChainStep
+
+    lines: list[str] = []
+
+    step_labels = {
+        BaggageChainStep.SS1_DISPLAYED: "SS1 (displayed)",
+        BaggageChainStep.SIS_HOLD_REQUEST: "SIS-HOLD (held)",
+        BaggageChainStep.SUPPLIER_BAGGAGE_HOLD: "SUPPLIER_HOLD (supplier)",
+        BaggageChainStep.SUPPLIER_PRICE_HOLD: "SUPPLIER_HOLD (fare)",
+        BaggageChainStep.HOLD_CORE_RESPONSE: "HOLD_CORE",
+        BaggageChainStep.BOOK_RESPONSE: "BOOK (booked)",
+        BaggageChainStep.SUPPLIER_BOOK: "SUPPLIER_BOOK (booked)",
+    }
+
+    chain_order = [
+        BaggageChainStep.SS1_DISPLAYED,
+        BaggageChainStep.SIS_HOLD_REQUEST,
+        BaggageChainStep.SUPPLIER_BAGGAGE_HOLD,
+        BaggageChainStep.SUPPLIER_PRICE_HOLD,
+        BaggageChainStep.HOLD_CORE_RESPONSE,
+        BaggageChainStep.SUPPLIER_BOOK,
+        BaggageChainStep.BOOK_RESPONSE,
+    ]
+
+    for journey in evidence.trip_index.journeys:
+        ji = journey.journey_index
+        journey_facts = evidence.facts_by_journey.get(ji, [])
+        if not journey_facts:
+            continue
+
+        route = f"{journey.origin}→{journey.destination}" if journey.origin else f"journey {ji}"
+        lines.append(f"\n### {route}")
+
+        for step in chain_order:
+            step_facts = [f for f in journey_facts if f.step == step]
+            if not step_facts:
+                continue
+
+            label = step_labels.get(step, step.value)
+            # Pick the most informative facts: fareId, baggageFareType, baggage benefit
+            for fact in step_facts:
+                lines.append(f"  {label}: {fact.label} = {fact.value}")
+
+    return lines
