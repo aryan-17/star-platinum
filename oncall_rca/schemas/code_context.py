@@ -2,7 +2,26 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from typing import Annotated, Any
+
+from pydantic import BaseModel, BeforeValidator, Field
+
+
+def _coerce_line_number(v: Any) -> int | None:
+    """Coerce LLM output to int or None. Handles strings like 'ninety'."""
+    if v is None:
+        return None
+    if isinstance(v, int):
+        return v
+    if isinstance(v, str):
+        try:
+            return int(v)
+        except ValueError:
+            return None
+    return None
+
+
+_LineNumber = Annotated[int | None, BeforeValidator(_coerce_line_number)]
 
 
 class CodeFile(BaseModel):
@@ -14,8 +33,8 @@ class CodeFile(BaseModel):
         default_factory=list,
         description="Relevant function/method names within the file",
     )
-    start_line: int | None = Field(default=None, description="Start of relevant range")
-    end_line: int | None = Field(default=None, description="End of relevant range")
+    start_line: _LineNumber = Field(default=None, description="Start of relevant range")
+    end_line: _LineNumber = Field(default=None, description="End of relevant range")
 
 
 class CodeContext(BaseModel):
