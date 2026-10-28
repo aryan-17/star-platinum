@@ -21,7 +21,7 @@ from oncall_rca.schemas.incident import Incident, IncidentType
 from oncall_rca.schemas.run_state import RunState, StageRecord, StageStatus
 from oncall_rca.stages.critic.critic import critique
 from oncall_rca.stages.evidence.engine import build_evidence_pack
-from oncall_rca.stages.investigator.investigator import investigate
+from oncall_rca.stages.investigator.investigator import investigate, investigate_journey
 from oncall_rca.stages.rca_writer.writer import build_rca_doc, render_rca_markdown, save_rca
 from oncall_rca.tools.cache import TripCache
 from oncall_rca.tools.log_api import fetch_trip_index
@@ -75,33 +75,58 @@ def run_pipeline(
         lambda: _code_context(state.evidence_pack, settings),
     )
 
-    # Stage 4: Investigator
+    # Stage 4: Investigator — per journey
     if state.evidence_pack is not None:
-        state = _run_stage(
-            state, "investigator",
-            lambda: investigate(state.evidence_pack, state.code_context or CodeContext(), llm),  # type: ignore[arg-type]
-        )
+        hypotheses: dict[int, Hypothesis] = {}
+        for journey in state.evidence_pack.trip_index.journeys:
+            ji = journey.journey_index
+            try:
+                h = investigate_journey(
+                    state.evidence_pack,  # type: ignore[arg-type]
+                    ji,
+                    state.code_context or CodeContext(),
+                    llm,
+                )
+                hypotheses[ji] = h
+            except Exception:
+                pass
+        # First hypothesis also stored as legacy single for backward compat
+        first_h = next(iter(hypotheses.values()), None)
+        state = state.model_copy(update={
+            "hypotheses": hypotheses,
+            "hypothesis": first_h,
+        })
+        state = _add_stage_record(state, "investigator", StageStatus.COMPLETED)
 
-    # Stage 5: Critic
-    if state.hypothesis is not None and state.evidence_pack is not None:
-        state = _run_stage(
-            state, "critic",
-            lambda: critique(state.hypothesis, state.evidence_pack, llm),  # type: ignore[arg-type]
-        )
+    # Stage 5: Critic — per journey
+    if state.hypotheses and state.evidence_pack is not None:
+        critic_reports: dict[int, CriticReport] = {}
+        for ji, h in state.hypotheses.items():
+            try:
+                cr = critique(h, state.evidence_pack, llm)  # type: ignore[arg-type]
+                critic_reports[ji] = cr
+            except Exception:
+                pass
+        first_cr = next(iter(critic_reports.values()), None)
+        state = state.model_copy(update={
+            "critic_reports": critic_reports,
+            "critic_report": first_cr,
+        })
+        state = _add_stage_record(state, "critic", StageStatus.COMPLETED)
 
     # Stage 6: RCA Writer
-    if all([state.incident, state.evidence_pack, state.hypothesis, state.critic_report]):
+    if all([state.incident, state.evidence_pack, state.hypotheses, state.critic_reports]):
         rca_doc = build_rca_doc(
             state.incident,  # type: ignore[arg-type]
             state.evidence_pack,  # type: ignore[arg-type]
             state.code_context or CodeContext(),
-            state.hypothesis,  # type: ignore[arg-type]
-            state.critic_report,  # type: ignore[arg-type]
+            state.hypotheses,
+            state.critic_reports,
         )
         state = state.model_copy(update={"rca_doc": rca_doc})
 
         # Save to disk
-        rca_path = save_rca(rca_doc, out_dir)
+        save_rca(rca_doc, out_dir)
         state = _add_stage_record(state, "rca_writer", StageStatus.COMPLETED)
     else:
         state = _add_stage_record(state, "rca_writer", StageStatus.SKIPPED)

@@ -19,11 +19,20 @@ def build_rca_doc(
     incident: Incident,
     evidence: EvidencePack,
     code_context: CodeContext,
-    hypothesis: Hypothesis,
-    critic_report: CriticReport,
+    hypotheses: dict[int, Hypothesis] | Hypothesis,
+    critic_reports: dict[int, CriticReport] | CriticReport,
 ) -> RCADoc:
-    """Build an RCADoc from all stage outputs."""
+    """Build an RCADoc from all stage outputs.
+
+    Accepts per-journey dicts or legacy single objects for backward compat.
+    """
     trip_id = evidence.trip_index.trip_id
+
+    # Normalize to dicts
+    if isinstance(hypotheses, Hypothesis):
+        hypotheses = {0: hypotheses}
+    if isinstance(critic_reports, CriticReport):
+        critic_reports = {0: critic_reports}
 
     # Timeline from journey calls
     timeline: list[TimelineEntry] = []
@@ -37,10 +46,50 @@ def build_rca_doc(
                 file_ref=call.res_file.file_name if call.res_file else "",
             ))
 
+    # Combine per-journey root causes
+    all_citations = []
+    all_alternatives = []
+    all_affected_code = []
+    root_cause_parts = []
+    summary_parts = []
+    proposed_fix_parts = []
+
+    # Use worst (lowest) confidence across journeys
+    worst_confidence = None
+    confidence_rank = {"high": 3, "medium": 2, "low": 1}
+
+    for ji in sorted(set(hypotheses.keys()) | set(critic_reports.keys())):
+        h = hypotheses.get(ji)
+        cr = critic_reports.get(ji)
+        journey = next(
+            (j for j in evidence.trip_index.journeys if j.journey_index == ji), None
+        )
+        route = (
+            f"{journey.origin}→{journey.destination}"
+            if journey and journey.origin else f"Journey {ji}"
+        )
+
+        if h:
+            summary_parts.append(f"[{route}] {h.claim}")
+            root_cause_parts.append(f"### {route}\n{h.explanation}")
+            all_citations.extend(h.supporting_citations)
+            all_affected_code.extend(h.affected_code)
+            if h.proposed_fix:
+                proposed_fix_parts.append(f"**{route}:** {h.proposed_fix}")
+
+        if cr:
+            all_alternatives.extend(cr.alternatives)
+            rank = confidence_rank.get(cr.confidence.value, 1)
+            if worst_confidence is None or rank < confidence_rank.get(worst_confidence.value, 1):
+                worst_confidence = cr.confidence
+
+    from oncall_rca.schemas.hypothesis import Confidence
+    final_confidence = worst_confidence or Confidence.LOW
+
     return RCADoc(
         trip_id=trip_id,
-        confidence=critic_report.confidence,
-        summary=hypothesis.claim,
+        confidence=final_confidence,
+        summary=" | ".join(summary_parts) if summary_parts else "No hypothesis generated.",
         reported_symptom=incident.reported_symptom,
         itinerary_ids=evidence.trip_index.itineraries,
         journeys=[
@@ -50,15 +99,15 @@ def build_rca_doc(
         passengers=evidence.trip_index.pax_count,
         timeline=timeline,
         divergence_point=evidence.divergence_point,
-        root_cause=hypothesis.explanation,
-        root_cause_citations=hypothesis.supporting_citations,
-        alternatives=critic_report.alternatives,
-        affected_code=hypothesis.affected_code,
+        root_cause="\n\n".join(root_cause_parts),
+        root_cause_citations=all_citations,
+        alternatives=all_alternatives,
+        affected_code=all_affected_code,
         commit_shas=code_context.commit_shas,
         changed_after_incident_warning=[
             f"{cf.repo}/{cf.path}" for cf in code_context.changed_after_incident
         ],
-        proposed_fix=hypothesis.proposed_fix,
+        proposed_fix="\n\n".join(proposed_fix_parts) if proposed_fix_parts else "",
         risks=[],
     )
 

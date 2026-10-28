@@ -55,8 +55,16 @@ class RunState(BaseModel):
     trip_index: TripIndex | None = None
     evidence_pack: EvidencePack | None = None
     code_context: CodeContext | None = None
-    hypothesis: Hypothesis | None = None
-    critic_report: CriticReport | None = None
+    hypothesis: Hypothesis | None = None  # legacy single hypothesis
+    critic_report: CriticReport | None = None  # legacy single critic report
+    hypotheses: dict[int, Hypothesis] = Field(
+        default_factory=dict,
+        description="Per-journey hypotheses: journey_index → Hypothesis",
+    )
+    critic_reports: dict[int, CriticReport] = Field(
+        default_factory=dict,
+        description="Per-journey critic reports: journey_index → CriticReport",
+    )
     rca_doc: RCADoc | None = None
 
     # Stage tracking
