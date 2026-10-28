@@ -73,6 +73,7 @@ def build_evidence_pack(
     trip_index = detect_supplier(trip_index)
 
     # Phase 1b: Fetch uncached payload files for extractable APIs
+    # Include both journey-attributed calls and unattributed (global) calls
     if settings is not None:
         _fetch_missing_files(trip_id, trip_index, cache, settings)
 
@@ -86,6 +87,29 @@ def build_evidence_pack(
             cache,
         )
         all_facts.extend(journey_facts)
+
+    # Phase 2a: Extract facts from unattributed calls (e.g. SS1 search-phase calls).
+    # These sit on supply-core hosts before the journey split and contain data for
+    # ALL journeys. Extract them for every journey so the investigator sees the
+    # displayed fare for each leg.
+    attributed_hosts = set()
+    for journey in trip_index.journeys:
+        for call in journey.calls or []:
+            attributed_hosts.add(call.host)
+
+    global_calls = [
+        c for c in trip_index.all_calls
+        if c.host not in attributed_hosts and _API_TO_STEPS.get(c.api) is not None
+    ]
+    if global_calls:
+        for journey in trip_index.journeys:
+            global_facts = _extract_journey_facts(
+                journey.journey_index,
+                global_calls,
+                trip_id,
+                cache,
+            )
+            all_facts.extend(global_facts)
 
     # Phase 2b: SS1 consistency check across multiple SS1 calls
     for journey in trip_index.journeys:
@@ -217,32 +241,48 @@ def _fetch_missing_files(
     cache: TripCache,
     settings: Settings,
 ) -> None:
-    """Fetch payload files from log API for calls that have extractors but aren't cached."""
+    """Fetch payload files from log API for calls that have extractors but aren't cached.
+
+    Fetches both journey-attributed calls and unattributed (global) calls like SS1.
+    """
     itinerary_id = trip_index.itineraries[0] if trip_index.itineraries else ""
     if not itinerary_id:
         return
 
+    # Collect all extractable calls: journey calls + unattributed global calls
+    all_extractable: list[Any] = []
     for journey in trip_index.journeys:
-        for call in journey.calls or []:
-            if _API_TO_STEPS.get(call.api) is None:
-                continue
-            if call.res_file is None:
-                continue
-            if cache.has_file(trip_id, call.res_file.file_name):
-                continue
+        all_extractable.extend(journey.calls or [])
+    # Add unattributed calls (e.g. SS1 on supply-core hosts)
+    attributed_hosts = {c.host for journey in trip_index.journeys for c in (journey.calls or [])}
+    for call in trip_index.all_calls:
+        if call.host not in attributed_hosts and _API_TO_STEPS.get(call.api) is not None:
+            all_extractable.append(call)
 
-            date = call.res_file.date if hasattr(call.res_file, "date") else ""
-            if not date:
-                continue
+    seen_files: set[str] = set()
+    for call in all_extractable:
+        if _API_TO_STEPS.get(call.api) is None:
+            continue
+        if call.res_file is None:
+            continue
+        if call.res_file.file_name in seen_files:
+            continue
+        seen_files.add(call.res_file.file_name)
+        if cache.has_file(trip_id, call.res_file.file_name):
+            continue
 
-            try:
-                content = fetch_file(
-                    file_name=call.res_file.file_name,
-                    itinerary_id=itinerary_id,
-                    date=str(date),
-                    trip_id=trip_id,
-                    settings=settings,
-                )
-                cache.write_file(trip_id, call.res_file.file_name, content)
-            except Exception:
-                pass  # skip fetch failures — extraction will just have fewer facts
+        date = call.res_file.date if hasattr(call.res_file, "date") else ""
+        if not date:
+            continue
+
+        try:
+            content = fetch_file(
+                file_name=call.res_file.file_name,
+                itinerary_id=itinerary_id,
+                date=str(date),
+                trip_id=trip_id,
+                settings=settings,
+            )
+            cache.write_file(trip_id, call.res_file.file_name, content)
+        except Exception:
+            pass  # skip fetch failures — extraction will just have fewer facts

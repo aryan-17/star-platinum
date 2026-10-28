@@ -178,8 +178,8 @@ def _build_prompt(evidence: EvidencePack, code_context: CodeContext) -> str:
 def _max_facts_per_journey(evidence: EvidencePack) -> int:
     """Calculate max facts per journey to stay within context budget."""
     n_journeys = max(len(evidence.trip_index.journeys), 1)
-    # 60 total facts budget, split evenly across journeys
-    return max(15, 60 // n_journeys)
+    # 30 total facts budget, split evenly across journeys
+    return max(10, 30 // n_journeys)
 
 
 def _build_fare_chain_summary(evidence: EvidencePack) -> list[str]:
@@ -227,8 +227,13 @@ def _build_fare_chain_summary(evidence: EvidencePack) -> list[str]:
                 continue
 
             label = step_labels.get(step, step.value)
-            # Pick the most informative facts: fareId, baggageFareType, baggage benefit
+            # Only key facts: fareId, baggageFareType, baggage type, hold/book status
             for fact in step_facts:
-                lines.append(f"  {label}: {fact.label} = {fact.value}")
+                fl = fact.label.lower()
+                if any(kw in fl for kw in (
+                    "fareid", "faretype", "baggagefaretype", "baggage benefit",
+                    "baggage (", "status", "booking status", "hold status",
+                )):
+                    lines.append(f"  {label}: {fact.label} = {fact.value}")
 
     return lines
