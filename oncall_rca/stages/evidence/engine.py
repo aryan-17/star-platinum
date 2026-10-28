@@ -16,6 +16,7 @@ import oncall_rca.stages.evidence.extractors.sis_hold
 import oncall_rca.stages.evidence.extractors.sms_supplier_hold
 import oncall_rca.stages.evidence.extractors.ss1
 import oncall_rca.stages.evidence.extractors.supplier_book  # noqa: F401
+from oncall_rca.config.settings import Settings
 
 # Map API names to baggage chain steps for extraction
 from oncall_rca.schemas.evidence import BaggageChainStep, EvidenceFact, EvidencePack
@@ -26,7 +27,7 @@ from oncall_rca.stages.evidence.extractors.ss1_consistency import check_ss1_cons
 from oncall_rca.stages.evidence.index_normaliser import normalise_trip_index
 from oncall_rca.stages.evidence.validator import ValidationReport, validate_trip
 from oncall_rca.tools.cache import TripCache
-from oncall_rca.tools.log_api import parse_payload
+from oncall_rca.tools.log_api import fetch_file, parse_payload
 
 _API_TO_STEPS: dict[str, list[BaggageChainStep]] = {
     "SINGLE_SOLUTION_SEARCH": [BaggageChainStep.SS1_DISPLAYED],
@@ -52,6 +53,7 @@ def build_evidence_pack(
     trip_id: str,
     raw_data: dict[str, Any],
     cache: TripCache,
+    settings: Settings | None = None,
 ) -> EvidencePack:
     """Build a complete EvidencePack for a trip.
 
@@ -59,6 +61,7 @@ def build_evidence_pack(
         trip_id: Trip reference.
         raw_data: Raw trip index data (the 'data' section).
         cache: File cache for fetching payloads.
+        settings: App settings for fetching uncached files from log API.
 
     Returns:
         EvidencePack with facts, divergence point, and anomalies.
@@ -68,6 +71,10 @@ def build_evidence_pack(
     trip_index = build_call_tree(trip_index)
     trip_index = split_journeys(trip_index)
     trip_index = detect_supplier(trip_index)
+
+    # Phase 1b: Fetch uncached payload files for extractable APIs
+    if settings is not None:
+        _fetch_missing_files(trip_id, trip_index, cache, settings)
 
     # Phase 2: Extract facts from cached payload files
     all_facts: list[EvidenceFact] = []
@@ -202,3 +209,40 @@ def _extract_journey_facts(
                 pass  # skip extraction errors
 
     return facts
+
+
+def _fetch_missing_files(
+    trip_id: str,
+    trip_index: Any,
+    cache: TripCache,
+    settings: Settings,
+) -> None:
+    """Fetch payload files from log API for calls that have extractors but aren't cached."""
+    itinerary_id = trip_index.itineraries[0] if trip_index.itineraries else ""
+    if not itinerary_id:
+        return
+
+    for journey in trip_index.journeys:
+        for call in journey.calls or []:
+            if _API_TO_STEPS.get(call.api) is None:
+                continue
+            if call.res_file is None:
+                continue
+            if cache.has_file(trip_id, call.res_file.file_name):
+                continue
+
+            date = call.res_file.date if hasattr(call.res_file, "date") else ""
+            if not date:
+                continue
+
+            try:
+                content = fetch_file(
+                    file_name=call.res_file.file_name,
+                    itinerary_id=itinerary_id,
+                    date=str(date),
+                    trip_id=trip_id,
+                    settings=settings,
+                )
+                cache.write_file(trip_id, call.res_file.file_name, content)
+            except Exception:
+                pass  # skip fetch failures — extraction will just have fewer facts

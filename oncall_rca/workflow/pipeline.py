@@ -166,7 +166,7 @@ def _evidence(
         raw_data = fetch_trip_index(trip_id, settings)
         cache.write_trip_index(trip_id, raw_data)
 
-    return build_evidence_pack(trip_id, raw_data, cache)
+    return build_evidence_pack(trip_id, raw_data, cache, settings=None if offline else settings)
 
 
 def _run_stage(state: RunState, stage_name: str, fn: Any) -> RunState:
