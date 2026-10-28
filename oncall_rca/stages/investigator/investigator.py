@@ -55,7 +55,7 @@ def investigate(
     max_iterations: int = 10,
     wall_clock_limit: int = 300,
 ) -> Hypothesis:
-    """Run the Investigator to explain the divergence.
+    """Run the Investigator for the whole trip (legacy single-hypothesis).
 
     Args:
         evidence: Complete evidence pack with facts and divergence point.
@@ -67,11 +67,29 @@ def investigate(
     Returns:
         Hypothesis with root cause explanation and citations.
     """
-    start = time.monotonic()
-
-    # Build the prompt with evidence summary
     prompt = _build_prompt(evidence, code_context)
+    return _run_llm(prompt, llm, wall_clock_limit)
 
+
+def investigate_journey(
+    evidence: EvidencePack,
+    journey_index: int,
+    code_context: CodeContext,
+    llm: LLMClient,
+    *,
+    wall_clock_limit: int = 300,
+) -> Hypothesis:
+    """Run the Investigator for a single journey.
+
+    Builds a focused prompt with only this journey's evidence and fare chain.
+    """
+    prompt = _build_journey_prompt(evidence, journey_index, code_context)
+    return _run_llm(prompt, llm, wall_clock_limit)
+
+
+def _run_llm(prompt: str, llm: LLMClient, wall_clock_limit: int) -> Hypothesis:
+    """Common LLM call logic."""
+    start = time.monotonic()
     try:
         hypothesis = llm.generate(
             prompt=prompt,
@@ -96,8 +114,79 @@ def investigate(
     return hypothesis
 
 
+def _build_journey_prompt(
+    evidence: EvidencePack,
+    journey_index: int,
+    code_context: CodeContext,
+) -> str:
+    """Build investigation prompt focused on a single journey."""
+    parts: list[str] = []
+    journey = next(
+        (j for j in evidence.trip_index.journeys if j.journey_index == journey_index),
+        None,
+    )
+    if journey is None:
+        return f"No journey {journey_index} found in trip {evidence.trip_index.trip_id}"
+
+    route = (
+        f"{journey.origin} → {journey.destination}"
+        if journey.origin else f"journey {journey_index}"
+    )
+    parts.append(f"## Trip: {evidence.trip_index.trip_id}")
+    parts.append(
+        f"## Investigating Journey {journey_index}: {route}"
+        f" (supplier: {journey.supplier})"
+    )
+
+    # Fare chain for this journey
+    fare_summary = _build_fare_chain_summary(evidence, journey_filter=journey_index)
+    if fare_summary:
+        parts.append("\n## Fare Chain Comparison (displayed → held → booked)")
+        parts.extend(fare_summary)
+
+    # Divergence point (if for this journey)
+    if evidence.divergence_point and evidence.divergence_point.journey_index == journey_index:
+        dp = evidence.divergence_point
+        parts.append("\n## Divergence Point")
+        parts.append(f"Step: {dp.step.value}")
+        parts.append(f"Expected: {dp.expected_value}")
+        parts.append(f"Actual: {dp.actual_value}")
+        parts.append(f"Class: {dp.divergence_class}")
+    else:
+        parts.append("\n## No divergence found in core baggage chain for this journey")
+
+    # Evidence facts for this journey only
+    journey_facts = evidence.facts_by_journey.get(journey_index, [])
+    parts.append(f"\n## Evidence ({len(journey_facts)} facts)")
+    for fact in journey_facts[:25]:
+        parts.append(
+            f"- [{fact.step.value}] {fact.label}: {fact.value} "
+            f"(source: {fact.citation.source_file} @ {fact.citation.field_path})"
+        )
+
+    # Anomalies
+    if evidence.anomalies:
+        parts.append("\n## Anomalies")
+        for a in evidence.anomalies[:10]:
+            parts.append(f"- {a}")
+
+    # Red herrings
+    if evidence.red_herrings:
+        parts.append("\n## Known Red Herrings (DO NOT blame these)")
+        for rh in evidence.red_herrings:
+            parts.append(f"- {rh}")
+
+    # Code context
+    if code_context.files:
+        parts.append(f"\n## Relevant Code ({len(code_context.files)} files)")
+        for cf in code_context.files[:5]:
+            parts.append(f"- {cf.repo}/{cf.path} (functions: {', '.join(cf.functions)})")
+
+    return "\n".join(parts)
+
+
 def _build_prompt(evidence: EvidencePack, code_context: CodeContext) -> str:
-    """Build the investigation prompt from evidence and code context."""
+    """Build the investigation prompt from evidence and code context (all journeys)."""
     parts: list[str] = []
 
     parts.append(f"## Trip: {evidence.trip_index.trip_id}")
@@ -182,11 +271,16 @@ def _max_facts_per_journey(evidence: EvidencePack) -> int:
     return max(10, 30 // n_journeys)
 
 
-def _build_fare_chain_summary(evidence: EvidencePack) -> list[str]:
+def _build_fare_chain_summary(
+    evidence: EvidencePack, *, journey_filter: int | None = None
+) -> list[str]:
     """Build a per-journey fare chain: SS1 → SIS-HOLD → SUPPLIER_HOLD → BOOK.
 
     Extracts fareId, comboFbc, and baggageFareType at each step so the LLM
     can immediately see where the fare switches.
+
+    Args:
+        journey_filter: If set, only include this journey index.
     """
     from oncall_rca.schemas.evidence import BaggageChainStep
 
@@ -214,6 +308,8 @@ def _build_fare_chain_summary(evidence: EvidencePack) -> list[str]:
 
     for journey in evidence.trip_index.journeys:
         ji = journey.journey_index
+        if journey_filter is not None and ji != journey_filter:
+            continue
         journey_facts = evidence.facts_by_journey.get(ji, [])
         if not journey_facts:
             continue
