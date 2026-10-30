@@ -231,11 +231,16 @@ def build_graph(
         }
 
     def routing_node(state: RunState) -> dict[str, Any]:
-        routing_decision = route_by_confidence(
-            state.critic_reports,
-            settings.routing,
-        )
-        return {"routing_decision": routing_decision}
+        try:
+            routing_decision = route_by_confidence(
+                state.critic_reports,
+                settings.routing,
+            )
+            return {"routing_decision": routing_decision}
+        except Exception:
+            from oncall_rca.routing import RoutingDecision
+
+            return {"routing_decision": RoutingDecision.ESCALATE}
 
     def rca_writer_node(state: RunState) -> dict[str, Any]:
         if not all([state.incident, state.evidence_pack, state.hypotheses, state.critic_reports]):
@@ -246,25 +251,34 @@ def build_graph(
             )
             return {"stages": [*state.stages, record], "current_stage": "rca_writer"}
 
-        rca_doc = build_rca_doc(
-            state.incident,  # type: ignore[arg-type]
-            state.evidence_pack,  # type: ignore[arg-type]
-            state.code_context or CodeContext(),
-            state.hypotheses,
-            state.critic_reports,
-        )
-        save_rca(rca_doc, out_dir)
+        try:
+            rca_doc = build_rca_doc(
+                state.incident,  # type: ignore[arg-type]
+                state.evidence_pack,  # type: ignore[arg-type]
+                state.code_context or CodeContext(),
+                state.hypotheses,
+                state.critic_reports,
+            )
+            save_rca(rca_doc, out_dir)
 
-        record = StageRecord(
-            stage="rca_writer",
-            status=StageStatus.COMPLETED,
-            completed_at=datetime.now(tz=UTC),
-        )
-        return {
-            "rca_doc": rca_doc,
-            "stages": [*state.stages, record],
-            "current_stage": "rca_writer",
-        }
+            record = StageRecord(
+                stage="rca_writer",
+                status=StageStatus.COMPLETED,
+                completed_at=datetime.now(tz=UTC),
+            )
+            return {
+                "rca_doc": rca_doc,
+                "stages": [*state.stages, record],
+                "current_stage": "rca_writer",
+            }
+        except Exception as e:
+            record = StageRecord(
+                stage="rca_writer",
+                status=StageStatus.FAILED,
+                error=str(e),
+                completed_at=datetime.now(tz=UTC),
+            )
+            return {"stages": [*state.stages, record], "current_stage": "rca_writer"}
 
     # --- Build graph ---
 

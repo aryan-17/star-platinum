@@ -79,7 +79,7 @@ def _load_playbook_from_path(path: Path) -> Playbook:
     if not path.exists():
         raise FileNotFoundError(f"Playbook not found: {path}")
     with open(path) as f:
-        data: dict[str, Any] = yaml.safe_load(f)
+        data: Any = yaml.safe_load(f)
     return Playbook.model_validate(data)
 
 
@@ -96,5 +96,5 @@ def load_supplier(supplier_name: str) -> SupplierConfig | None:
     if not path.exists():
         return None
     with open(path) as f:
-        data: dict[str, Any] = yaml.safe_load(f)
+        data: Any = yaml.safe_load(f)
     return SupplierConfig.model_validate(data)
