@@ -3,7 +3,7 @@
 import pytest
 from pydantic import BaseModel
 
-from oncall_rca.llm.client import LLMError, MockLLMClient
+from oncall_rca.llm.client import GroqClient, LLMError, MockLLMClient
 
 
 class SimpleResponse(BaseModel):
@@ -54,3 +54,29 @@ class TestMockLLMClient:
         client = MockLLMClient()
         with pytest.raises(LLMError, match="no response configured"):
             client.generate(prompt="test", response_schema=RequiredFields)
+
+
+class TestMultiModelRouting:
+    def test_stage_model_override(self) -> None:
+        """GroqClient uses stage-specific model when configured."""
+        client = GroqClient(
+            api_key="test-key",
+            model_name="default-model",
+            stage_models={"intake": "fast-model"},
+        )
+        assert client._resolve_model("intake") == "fast-model"
+        assert client._resolve_model("investigator") == "default-model"
+
+    def test_unknown_stage_falls_back_to_default(self) -> None:
+        """Typo in stage_models key must not crash — falls back to default."""
+        client = GroqClient(
+            api_key="test-key",
+            model_name="default-model",
+            stage_models={"investigater": "strong-model"},
+        )
+        assert client._resolve_model("investigator") == "default-model"
+
+    def test_stage_models_default_empty(self) -> None:
+        """No stage_models configured — all stages use default model."""
+        client = GroqClient(api_key="test-key", model_name="default-model")
+        assert client._resolve_model("intake") == "default-model"

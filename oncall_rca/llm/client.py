@@ -81,6 +81,7 @@ class GroqClient:
         max_retries: int = 3,
         timeout_seconds: int = 60,
         token_budget: int = 0,
+        stage_models: dict[str, str] | None = None,
     ) -> None:
         if not api_key:
             raise LLMError("GROQ_API_KEY is required")
@@ -90,6 +91,11 @@ class GroqClient:
         self._timeout_seconds = timeout_seconds
         self._token_budget = token_budget
         self._tokens_used = 0
+        self._stage_models: dict[str, str] = stage_models or {}
+
+    def _resolve_model(self, stage: str) -> str:
+        """Return the model for a stage, falling back to default."""
+        return self._stage_models.get(stage, self._model_name)
 
     @classmethod
     def from_settings(cls, settings: Any) -> GroqClient:
@@ -98,6 +104,7 @@ class GroqClient:
             api_key=settings.model.api_key,
             model_name=settings.model.model,
             token_budget=settings.budgets.tokens_per_stage_limit,
+            stage_models=getattr(settings.model, "stage_models", None),
         )
 
     @property
@@ -141,10 +148,12 @@ class GroqClient:
             messages.append({"role": "system", "content": schema_instruction})
         messages.append({"role": "user", "content": prompt})
 
+        effective_model = self._resolve_model(stage)
+
         for attempt in range(1, self._max_retries + 1):
             try:
                 response = client.chat.completions.create(
-                    model=self._model_name,
+                    model=effective_model,
                     messages=messages,
                     temperature=temperature,
                     max_completion_tokens=max_tokens,
@@ -180,7 +189,7 @@ class GroqClient:
                     trace_id=trace_id,
                     stage=stage,
                     operation="llm_generate",
-                    model=self._model_name,
+                    model=effective_model,
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
                     latency_ms=elapsed_ms,
@@ -202,7 +211,7 @@ class GroqClient:
                     trace_id=trace_id,
                     stage=stage,
                     operation="llm_generate",
-                    model=self._model_name,
+                    model=effective_model,
                     latency_ms=elapsed_ms,
                     success=False,
                     error=str(e),

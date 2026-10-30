@@ -47,6 +47,10 @@ class ModelSettings(BaseSettings):
 
     model: str = "openai/gpt-oss-120b"
     api_key: str = ""
+    stage_models: dict[str, str] = Field(
+        default_factory=dict,
+        description="Per-stage model overrides, e.g. {'intake': 'llama-3.1-8b-instant'}",
+    )
 
 
 class BudgetSettings(BaseSettings):
