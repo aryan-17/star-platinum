@@ -6,6 +6,7 @@ for a given API step, then builds a CodeContext schema.
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -84,11 +85,54 @@ def build_code_context(
             if check_changed_after(repo_state.path, r.file, incident_date):
                 changed_after.append(cf)
 
+    # Supplement with recently changed files via git log
+    if incident_date:
+        recently_changed = find_recently_changed_files(repo_state.path, incident_date)
+        existing_paths = {f.path for f in files}
+        for rel_path in recently_changed:
+            if rel_path not in existing_paths:
+                cf = CodeFile(
+                    repo=target_repo,
+                    path=rel_path,
+                    functions=["(recently changed)"],
+                )
+                files.append(cf)
+                if check_changed_after(repo_state.path, rel_path, incident_date):
+                    changed_after.append(cf)
+
     return CodeContext(
         files=files,
         commit_shas={r.repo: r.commit_sha for r in repo_states},
         changed_after_incident=changed_after,
     )
+
+
+def find_recently_changed_files(
+    repo_path: Path,
+    since_date: str,
+    max_results: int = 20,
+) -> list[str]:
+    """Find files modified since a date using git log.
+
+    Returns relative file paths. Returns empty list on any git failure.
+    """
+    try:
+        result = subprocess.run(
+            [
+                "git", "log", f"--since={since_date}",
+                "--diff-filter=M", "--name-only", "--pretty=format:",
+            ],
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        return []
+    if result.returncode != 0:
+        return []
+    files = sorted(set(line.strip() for line in result.stdout.splitlines() if line.strip()))
+    return files[:max_results]
 
 
 def _find_service(

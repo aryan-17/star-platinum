@@ -6,8 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from oncall_rca.stages.code_context.builder import _find_service, load_service_map
-from oncall_rca.tools.code_tools import code_grep, code_read, code_list, git_log, GrepResult
+from oncall_rca.stages.code_context.builder import (
+    _find_service,
+    find_recently_changed_files,
+    load_service_map,
+)
+from oncall_rca.tools.code_tools import code_grep, code_list, code_read, git_log
 
 
 class TestServiceMap:
@@ -80,3 +84,66 @@ class TestCodeTools:
     def test_git_log(self, repo_path: Path) -> None:
         log = git_log(repo_path, max_entries=5)
         assert len(log) > 0
+
+
+class TestDiffBasedContext:
+    def test_recently_changed_files_in_git_repo(self, tmp_path: Path) -> None:
+        """Finds files changed since a date in a real git repo."""
+        subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True, check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@test.com"],
+            cwd=tmp_path, capture_output=True, check=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test"],
+            cwd=tmp_path, capture_output=True, check=True,
+        )
+        (tmp_path / "file.py").write_text("x = 1")
+        subprocess.run(["git", "add", "."], cwd=tmp_path, capture_output=True, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "init"],
+            cwd=tmp_path, capture_output=True, check=True,
+        )
+        (tmp_path / "file.py").write_text("x = 2")
+        subprocess.run(["git", "add", "."], cwd=tmp_path, capture_output=True, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "change"],
+            cwd=tmp_path, capture_output=True, check=True,
+        )
+
+        result = find_recently_changed_files(tmp_path, "2020-01-01")
+        assert "file.py" in result
+
+    def test_recently_changed_files_not_a_repo(self, tmp_path: Path) -> None:
+        """Non-git directory returns empty list, no crash."""
+        result = find_recently_changed_files(tmp_path, "2020-01-01")
+        assert result == []
+
+    def test_recently_changed_files_respects_max(self, tmp_path: Path) -> None:
+        """max_results limits output."""
+        subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True, check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@test.com"],
+            cwd=tmp_path, capture_output=True, check=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test"],
+            cwd=tmp_path, capture_output=True, check=True,
+        )
+        for i in range(5):
+            (tmp_path / f"f{i}.py").write_text(f"x = {i}")
+        subprocess.run(["git", "add", "."], cwd=tmp_path, capture_output=True, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "init"],
+            cwd=tmp_path, capture_output=True, check=True,
+        )
+        for i in range(5):
+            (tmp_path / f"f{i}.py").write_text(f"x = {i + 10}")
+        subprocess.run(["git", "add", "."], cwd=tmp_path, capture_output=True, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "change all"],
+            cwd=tmp_path, capture_output=True, check=True,
+        )
+
+        result = find_recently_changed_files(tmp_path, "2020-01-01", max_results=2)
+        assert len(result) <= 2
