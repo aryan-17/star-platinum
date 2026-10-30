@@ -1,0 +1,50 @@
+name: baggage_mismatch
+incident_type: baggage_mismatch
+
+# Ordered chain of steps for divergence walking (BaggageChainStep values).
+# The divergence finder walks these in order and reports the first break.
+chain:
+  - ss1_displayed
+  - ss1_consistency
+  - sis_hold_request
+  - supplier_baggage_hold
+  - supplier_price_hold
+  - hold_core_response
+  - book_response
+  - supplier_book
+  - supplier_book_retry
+
+# Maps API names from the trip index to BaggageChainStep values for extraction.
+api_to_steps:
+  SINGLE_SOLUTION_SEARCH:
+    - ss1_displayed
+  SINGLE_SOL_SEARCH:
+    - ss1_displayed
+  HOLD:
+    - sis_hold_request
+  SMS_SUPPLIER_HOLD:
+    - supplier_baggage_hold
+    - supplier_price_hold
+  HOLD_CORE:
+    - hold_core_response
+  SUPPLIER_BOOK:
+    - supplier_book
+  BOOK:
+    - book_response
+
+# Divergence class descriptions from plan section 8.4.
+# Keys are BaggageChainStep values.
+divergence_classes:
+  ss1_consistency: "SS1 responses inconsistent across calls"
+  sis_hold_request: "SIS-HOLD FBC/fare != SS1"
+  supplier_baggage_hold: "Supplier free tier != SS1 benefit"
+  supplier_price_hold: "Supplier returned different fare during HOLD"
+  hold_core_response: "HOLD_CORE fare != SIS-HOLD request"
+  book_response: "Booking failed or baggage missing in book"
+  supplier_book: "SUPPLIER_BOOK baggage mismatch or booking failed"
+  supplier_book_retry: "Retry changed fare/baggage"
+
+# Known false positives — the Investigator is told to ignore these.
+red_herrings:
+  - "journeyFareSummary.passengerBaggageDetails is fare-level metadata, not booked baggage"
+  - "SUPPLIER_BOOK session-expiry retry (err.2-maxico) is expected for long hold-to-book gaps"
