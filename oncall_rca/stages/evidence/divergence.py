@@ -6,30 +6,18 @@ This module walks the chain and returns the first divergence point, or None.
 
 from __future__ import annotations
 
+from oncall_rca.playbooks.loader import Playbook, load_playbook
 from oncall_rca.schemas.evidence import (
     BaggageChainStep,
     DivergencePoint,
-    Citation,
     EvidenceFact,
 )
-
-
-# Divergence class descriptions from §8.4
-_DIVERGENCE_CLASSES: dict[BaggageChainStep, str] = {
-    BaggageChainStep.SS1_CONSISTENCY: "SS1 responses inconsistent across calls",
-    BaggageChainStep.SIS_HOLD_REQUEST: "SIS-HOLD FBC/fare != SS1",
-    BaggageChainStep.SUPPLIER_BAGGAGE_HOLD: "Supplier free tier != SS1 benefit",
-    BaggageChainStep.SUPPLIER_PRICE_HOLD: "Supplier returned different fare during HOLD",
-    BaggageChainStep.HOLD_CORE_RESPONSE: "HOLD_CORE fare != SIS-HOLD request",
-    BaggageChainStep.BOOK_RESPONSE: "Booking failed or baggage missing in book",
-    BaggageChainStep.SUPPLIER_BOOK: "SUPPLIER_BOOK baggage mismatch or booking failed",
-    BaggageChainStep.SUPPLIER_BOOK_RETRY: "Retry changed fare/baggage",
-}
 
 
 def find_first_divergence(
     facts: list[EvidenceFact],
     journey_index: int,
+    playbook: Playbook | None = None,
 ) -> DivergencePoint | None:
     """Find the first step where baggage/fare diverges for a journey.
 
@@ -43,6 +31,14 @@ def find_first_divergence(
     Returns:
         DivergencePoint if found, None if all steps are consistent.
     """
+    if playbook is None:
+        playbook = load_playbook("baggage_mismatch")
+
+    # Build divergence class lookup from playbook
+    divergence_classes: dict[BaggageChainStep, str] = {
+        BaggageChainStep(k): v for k, v in playbook.divergence_classes.items()
+    }
+
     journey_facts = [f for f in facts if f.journey_index == journey_index]
     if not journey_facts:
         return None
@@ -67,24 +63,21 @@ def find_first_divergence(
                 expected_value="consistent across all SS1 calls",
                 actual_value=fact.value,
                 citation=fact.citation,
-                divergence_class=_DIVERGENCE_CLASSES[BaggageChainStep.SS1_CONSISTENCY],
+                divergence_class=divergence_classes.get(
+                    BaggageChainStep.SS1_CONSISTENCY, ""
+                ),
             )
 
-    # Walk the chain looking for status/booking failures
+    # Walk the chain from playbook (skip ss1_displayed and ss1_consistency — handled above)
     chain_order = [
-        BaggageChainStep.SIS_HOLD_REQUEST,
-        BaggageChainStep.SUPPLIER_BAGGAGE_HOLD,
-        BaggageChainStep.SUPPLIER_PRICE_HOLD,
-        BaggageChainStep.HOLD_CORE_RESPONSE,
-        BaggageChainStep.BOOK_RESPONSE,
-        BaggageChainStep.SUPPLIER_BOOK,
-        BaggageChainStep.SUPPLIER_BOOK_RETRY,
+        BaggageChainStep(s) for s in playbook.chain
+        if s not in (BaggageChainStep.SS1_DISPLAYED.value, BaggageChainStep.SS1_CONSISTENCY.value)
     ]
 
     for step in chain_order:
         step_facts = facts_by_step.get(step, [])
         for fact in step_facts:
-            divergence = _check_fact_for_divergence(fact, ss1_facts, step)
+            divergence = _check_fact_for_divergence(fact, ss1_facts, step, divergence_classes)
             if divergence:
                 return divergence
 
@@ -95,6 +88,7 @@ def _check_fact_for_divergence(
     fact: EvidenceFact,
     ss1_facts: list[EvidenceFact],
     step: BaggageChainStep,
+    divergence_classes: dict[BaggageChainStep, str],
 ) -> DivergencePoint | None:
     """Check a single fact for divergence indicators."""
 
@@ -106,7 +100,7 @@ def _check_fact_for_divergence(
             expected_value="success",
             actual_value=fact.value,
             citation=fact.citation,
-            divergence_class=_DIVERGENCE_CLASSES.get(step, ""),
+            divergence_class=divergence_classes.get(step, ""),
         )
 
     # Check hold status
@@ -118,7 +112,7 @@ def _check_fact_for_divergence(
                 expected_value="HOLD_SUCCESS",
                 actual_value=fact.value,
                 citation=fact.citation,
-                divergence_class=_DIVERGENCE_CLASSES.get(step, ""),
+                divergence_class=divergence_classes.get(step, ""),
             )
 
     # Check booking status
@@ -130,7 +124,7 @@ def _check_fact_for_divergence(
                 expected_value="CNF",
                 actual_value=fact.value,
                 citation=fact.citation,
-                divergence_class=_DIVERGENCE_CLASSES.get(step, ""),
+                divergence_class=divergence_classes.get(step, ""),
             )
 
     return None

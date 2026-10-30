@@ -8,6 +8,8 @@ from typing import Annotated
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+from oncall_rca.routing import RoutingSettings
+
 
 class LogApiSettings(BaseSettings):
     """Log API connection settings."""
@@ -47,6 +49,10 @@ class ModelSettings(BaseSettings):
 
     model: str = "openai/gpt-oss-120b"
     api_key: str = ""
+    stage_models: dict[str, str] = Field(
+        default_factory=dict,
+        description="Per-stage model overrides, e.g. {'intake': 'llama-3.1-8b-instant'}",
+    )
 
 
 class BudgetSettings(BaseSettings):
@@ -80,6 +86,7 @@ class Settings(BaseSettings):
     model: Annotated[ModelSettings, Field(default_factory=ModelSettings)]
     budgets: Annotated[BudgetSettings, Field(default_factory=BudgetSettings)]
     output: Annotated[OutputSettings, Field(default_factory=OutputSettings)]
+    routing: Annotated[RoutingSettings, Field(default_factory=RoutingSettings)]
 
 
 def load_settings() -> Settings:

@@ -1,30 +1,21 @@
 """End-to-end RCA pipeline — wires all stages together.
 
 One command: trip ID → RCA document.
-Checkpoints after each stage for resumability.
+Delegates to a LangGraph StateGraph with MemorySaver checkpointing.
 """
 
 from __future__ import annotations
 
-import json
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
 from oncall_rca.config.settings import Settings
 from oncall_rca.llm.client import LLMClient
-from oncall_rca.schemas.code_context import CodeContext
-from oncall_rca.schemas.evidence import EvidencePack
-from oncall_rca.schemas.hypothesis import Confidence, CriticReport, Hypothesis
-from oncall_rca.schemas.incident import Incident, IncidentType
-from oncall_rca.schemas.run_state import RunState, StageRecord, StageStatus
-from oncall_rca.stages.critic.critic import critique
-from oncall_rca.stages.evidence.engine import build_evidence_pack
-from oncall_rca.stages.investigator.investigator import investigate, investigate_journey
-from oncall_rca.stages.rca_writer.writer import build_rca_doc, render_rca_markdown, save_rca
+from oncall_rca.schemas.incident import Incident
+from oncall_rca.schemas.run_state import RunState
 from oncall_rca.tools.cache import TripCache
-from oncall_rca.tools.log_api import fetch_trip_index
+from oncall_rca.workflow.graph import build_graph
 
 
 def run_pipeline(
@@ -55,184 +46,30 @@ def run_pipeline(
         settings = Settings()
     if llm is None:
         from oncall_rca.llm.client import GroqClient
+
         llm = GroqClient.from_settings(settings)
 
     cache = TripCache(cache_dir or settings.output.cache_dir)
     out_dir = output_dir or settings.output.rca_dir
 
     run_id = str(uuid.uuid4())[:12]
-    state = RunState(run_id=run_id, started_at=datetime.now(tz=UTC))
 
-    # Stage 1: Incident (synthetic if not provided)
-    state = _run_stage(state, "intake", lambda: _intake(trip_id, incident))
-
-    # Stage 2: Evidence
-    state = _run_stage(state, "evidence", lambda: _evidence(trip_id, settings, cache, offline))
-
-    # Stage 3: Code Context — uses repo sync + builder if repos configured
-    state = _run_stage(
-        state, "code_context",
-        lambda: _code_context(state.evidence_pack, settings),
+    graph = build_graph(
+        trip_id=trip_id,
+        settings=settings,
+        llm=llm,
+        cache=cache,
+        out_dir=out_dir,
+        incident=incident,
+        offline=offline,
     )
 
-    # Stage 4: Investigator — per journey
-    if state.evidence_pack is not None:
-        hypotheses: dict[int, Hypothesis] = {}
-        for journey in state.evidence_pack.trip_index.journeys:
-            ji = journey.journey_index
-            try:
-                h = investigate_journey(
-                    state.evidence_pack,  # type: ignore[arg-type]
-                    ji,
-                    state.code_context or CodeContext(),
-                    llm,
-                )
-                hypotheses[ji] = h
-            except Exception:
-                pass
-        # First hypothesis also stored as legacy single for backward compat
-        first_h = next(iter(hypotheses.values()), None)
-        state = state.model_copy(update={
-            "hypotheses": hypotheses,
-            "hypothesis": first_h,
-        })
-        state = _add_stage_record(state, "investigator", StageStatus.COMPLETED)
-
-    # Stage 5: Critic — per journey
-    if state.hypotheses and state.evidence_pack is not None:
-        critic_reports: dict[int, CriticReport] = {}
-        for ji, h in state.hypotheses.items():
-            try:
-                cr = critique(h, state.evidence_pack, llm)  # type: ignore[arg-type]
-                critic_reports[ji] = cr
-            except Exception:
-                pass
-        first_cr = next(iter(critic_reports.values()), None)
-        state = state.model_copy(update={
-            "critic_reports": critic_reports,
-            "critic_report": first_cr,
-        })
-        state = _add_stage_record(state, "critic", StageStatus.COMPLETED)
-
-    # Stage 6: RCA Writer
-    if all([state.incident, state.evidence_pack, state.hypotheses, state.critic_reports]):
-        rca_doc = build_rca_doc(
-            state.incident,  # type: ignore[arg-type]
-            state.evidence_pack,  # type: ignore[arg-type]
-            state.code_context or CodeContext(),
-            state.hypotheses,
-            state.critic_reports,
-        )
-        state = state.model_copy(update={"rca_doc": rca_doc})
-
-        # Save to disk
-        save_rca(rca_doc, out_dir)
-        state = _add_stage_record(state, "rca_writer", StageStatus.COMPLETED)
-    else:
-        state = _add_stage_record(state, "rca_writer", StageStatus.SKIPPED)
-
-    return state
-
-
-def _intake(trip_id: str, incident: Incident | None) -> Incident:
-    """Create or use incident."""
-    if incident:
-        return incident
-    return Incident(
-        message_id="manual",
-        thread_id="manual",
-        trip_ref=trip_id,
-        incident_type=IncidentType.BAGGAGE_MISMATCH,
-        reported_symptom="Manual pipeline run",
-        received_at=datetime.now(tz=UTC),
+    result = graph.invoke(
+        RunState(run_id=run_id, started_at=datetime.now(tz=UTC)),
+        config={"configurable": {"thread_id": run_id}},
     )
 
-
-def _code_context(
-    evidence_pack: EvidencePack | None,
-    settings: Settings,
-) -> CodeContext:
-    """Build code context from repos if configured, otherwise empty."""
-    if evidence_pack is None or evidence_pack.divergence_point is None:
-        return CodeContext()
-
-    try:
-        from oncall_rca.stages.code_context.builder import build_code_context
-        from oncall_rca.stages.repo_sync.sync import sync_repos
-
-        repo_states = sync_repos(settings)
-        if not repo_states:
-            return CodeContext()
-
-        dp = evidence_pack.divergence_point
-        return build_code_context(
-            step_api=dp.step.value,
-            step_api_type="",
-            repo_states=repo_states,
-            incident_date="",
-        )
-    except Exception:
-        # Repos not configured or not cloned — degrade gracefully
-        return CodeContext()
-
-
-def _evidence(
-    trip_id: str,
-    settings: Settings,
-    cache: TripCache,
-    offline: bool,
-) -> EvidencePack:
-    """Fetch trip data and build evidence pack."""
-    if cache.has_trip_index(trip_id):
-        raw_data = cache.read_trip_index(trip_id)
-    elif offline:
-        raise RuntimeError(f"Trip {trip_id} not in cache and offline=True")
-    else:
-        raw_data = fetch_trip_index(trip_id, settings)
-        cache.write_trip_index(trip_id, raw_data)
-
-    return build_evidence_pack(trip_id, raw_data, cache, settings=None if offline else settings)
-
-
-def _run_stage(state: RunState, stage_name: str, fn: Any) -> RunState:
-    """Run a stage function and update state."""
-    state = state.model_copy(update={"current_stage": stage_name})
-    record = StageRecord(
-        stage=stage_name,
-        status=StageStatus.RUNNING,
-        started_at=datetime.now(tz=UTC),
-    )
-
-    try:
-        result = fn()
-        record = record.model_copy(update={
-            "status": StageStatus.COMPLETED,
-            "completed_at": datetime.now(tz=UTC),
-        })
-
-        # Map result to the right state field
-        field_map = {
-            "intake": "incident",
-            "evidence": "evidence_pack",
-            "code_context": "code_context",
-            "investigator": "hypothesis",
-            "critic": "critic_report",
-        }
-        field = field_map.get(stage_name)
-        updates: dict[str, Any] = {"stages": [*state.stages, record]}
-        if field:
-            updates[field] = result
-        return state.model_copy(update=updates)
-
-    except Exception as e:
-        record = record.model_copy(update={
-            "status": StageStatus.FAILED,
-            "error": str(e),
-            "completed_at": datetime.now(tz=UTC),
-        })
-        return state.model_copy(update={"stages": [*state.stages, record]})
-
-
-def _add_stage_record(state: RunState, stage: str, status: StageStatus) -> RunState:
-    record = StageRecord(stage=stage, status=status, completed_at=datetime.now(tz=UTC))
-    return state.model_copy(update={"stages": [*state.stages, record]})
+    # LangGraph returns a dict — convert back to RunState
+    if isinstance(result, dict):
+        return RunState.model_validate(result)
+    return result

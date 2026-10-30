@@ -1,0 +1,8 @@
+name: Air Arabia
+host_patterns:
+  - g9routes
+  - airarabia
+benign_errors:
+  - code: "err.2-maxico.exposed.invalid.transaction.id"
+    meaning: "Session expired between hold and book — adapter retries automatically"
+inline_ticketing: true

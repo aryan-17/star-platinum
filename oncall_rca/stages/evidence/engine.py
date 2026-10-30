@@ -17,8 +17,7 @@ import oncall_rca.stages.evidence.extractors.sms_supplier_hold
 import oncall_rca.stages.evidence.extractors.ss1
 import oncall_rca.stages.evidence.extractors.supplier_book  # noqa: F401
 from oncall_rca.config.settings import Settings
-
-# Map API names to baggage chain steps for extraction
+from oncall_rca.playbooks.loader import Playbook, load_playbook
 from oncall_rca.schemas.evidence import BaggageChainStep, EvidenceFact, EvidencePack
 from oncall_rca.stages.evidence.call_tree import build_call_tree, detect_supplier, split_journeys
 from oncall_rca.stages.evidence.divergence import find_first_divergence
@@ -29,31 +28,13 @@ from oncall_rca.stages.evidence.validator import ValidationReport, validate_trip
 from oncall_rca.tools.cache import TripCache
 from oncall_rca.tools.log_api import fetch_file, parse_payload
 
-_API_TO_STEPS: dict[str, list[BaggageChainStep]] = {
-    "SINGLE_SOLUTION_SEARCH": [BaggageChainStep.SS1_DISPLAYED],
-    "SINGLE_SOL_SEARCH": [BaggageChainStep.SS1_DISPLAYED],
-    "HOLD": [BaggageChainStep.SIS_HOLD_REQUEST],
-    "SMS_SUPPLIER_HOLD": [
-        BaggageChainStep.SUPPLIER_BAGGAGE_HOLD,
-        BaggageChainStep.SUPPLIER_PRICE_HOLD,
-    ],
-    "HOLD_CORE": [BaggageChainStep.HOLD_CORE_RESPONSE],
-    "SUPPLIER_BOOK": [BaggageChainStep.SUPPLIER_BOOK],
-    "BOOK": [BaggageChainStep.BOOK_RESPONSE],
-}
-
-# Known red herrings
-_RED_HERRINGS = [
-    "journeyFareSummary.passengerBaggageDetails is fare-level metadata, not booked baggage",
-    "SUPPLIER_BOOK session-expiry retry (err.2-maxico) is expected for long hold-to-book gaps",
-]
-
 
 def build_evidence_pack(
     trip_id: str,
     raw_data: dict[str, Any],
     cache: TripCache,
     settings: Settings | None = None,
+    playbook: Playbook | None = None,
 ) -> EvidencePack:
     """Build a complete EvidencePack for a trip.
 
@@ -66,6 +47,14 @@ def build_evidence_pack(
     Returns:
         EvidencePack with facts, divergence point, and anomalies.
     """
+    if playbook is None:
+        playbook = load_playbook("baggage_mismatch")
+
+    # Build api_to_steps from playbook
+    api_to_steps: dict[str, list[BaggageChainStep]] = {}
+    for api_name, step_values in playbook.api_to_steps.items():
+        api_to_steps[api_name] = [BaggageChainStep(v) for v in step_values]
+
     # Phase 1: Normalise and structure
     trip_index = normalise_trip_index(raw_data)
     trip_index = build_call_tree(trip_index)
@@ -75,7 +64,7 @@ def build_evidence_pack(
     # Phase 1b: Fetch uncached payload files for extractable APIs
     # Include both journey-attributed calls and unattributed (global) calls
     if settings is not None:
-        _fetch_missing_files(trip_id, trip_index, cache, settings)
+        _fetch_missing_files(trip_id, trip_index, cache, settings, api_to_steps)
 
     # Phase 2: Extract facts from cached payload files
     all_facts: list[EvidenceFact] = []
@@ -85,6 +74,7 @@ def build_evidence_pack(
             journey.calls or [],
             trip_id,
             cache,
+            api_to_steps,
         )
         all_facts.extend(journey_facts)
 
@@ -99,7 +89,7 @@ def build_evidence_pack(
 
     global_calls = [
         c for c in trip_index.all_calls
-        if c.host not in attributed_hosts and _API_TO_STEPS.get(c.api) is not None
+        if c.host not in attributed_hosts and api_to_steps.get(c.api) is not None
     ]
     if global_calls:
         for journey in trip_index.journeys:
@@ -108,6 +98,7 @@ def build_evidence_pack(
                 global_calls,
                 trip_id,
                 cache,
+                api_to_steps,
             )
             all_facts.extend(global_facts)
 
@@ -148,7 +139,7 @@ def build_evidence_pack(
         facts=all_facts,
         divergence_point=divergence_point,
         anomalies=all_anomalies,
-        red_herrings=_RED_HERRINGS,
+        red_herrings=playbook.red_herrings,
         supplier=trip_index.journeys[0].supplier if trip_index.journeys else "",
         facts_by_journey=facts_by_journey,
     )
@@ -196,15 +187,16 @@ def _validation_to_evidence(
 
 def _extract_journey_facts(
     journey_index: int,
-    calls: list,
+    calls: list,  # type: ignore[type-arg]
     trip_id: str,
     cache: TripCache,
+    api_to_steps: dict[str, list[BaggageChainStep]],
 ) -> list[EvidenceFact]:
     """Extract facts from payload files for calls in a journey."""
     facts: list[EvidenceFact] = []
 
     for call in calls:
-        steps = _API_TO_STEPS.get(call.api)
+        steps = api_to_steps.get(call.api)
         if steps is None:
             continue
 
@@ -240,6 +232,7 @@ def _fetch_missing_files(
     trip_index: Any,
     cache: TripCache,
     settings: Settings,
+    api_to_steps: dict[str, list[BaggageChainStep]],
 ) -> None:
     """Fetch payload files from log API for calls that have extractors but aren't cached.
 
@@ -256,12 +249,12 @@ def _fetch_missing_files(
     # Add unattributed calls (e.g. SS1 on supply-core hosts)
     attributed_hosts = {c.host for journey in trip_index.journeys for c in (journey.calls or [])}
     for call in trip_index.all_calls:
-        if call.host not in attributed_hosts and _API_TO_STEPS.get(call.api) is not None:
+        if call.host not in attributed_hosts and api_to_steps.get(call.api) is not None:
             all_extractable.append(call)
 
     seen_files: set[str] = set()
     for call in all_extractable:
-        if _API_TO_STEPS.get(call.api) is None:
+        if api_to_steps.get(call.api) is None:
             continue
         if call.res_file is None:
             continue
