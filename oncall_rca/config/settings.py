@@ -8,6 +8,8 @@ from typing import Annotated
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+from oncall_rca.routing import RoutingSettings
+
 
 class LogApiSettings(BaseSettings):
     """Log API connection settings."""
@@ -84,6 +86,7 @@ class Settings(BaseSettings):
     model: Annotated[ModelSettings, Field(default_factory=ModelSettings)]
     budgets: Annotated[BudgetSettings, Field(default_factory=BudgetSettings)]
     output: Annotated[OutputSettings, Field(default_factory=OutputSettings)]
+    routing: Annotated[RoutingSettings, Field(default_factory=RoutingSettings)]
 
 
 def load_settings() -> Settings:

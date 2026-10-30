@@ -114,6 +114,15 @@ def run_pipeline(
         })
         state = _add_stage_record(state, "critic", StageStatus.COMPLETED)
 
+    # Stage 5b: Routing
+    from oncall_rca.routing import route_by_confidence
+
+    routing_decision = route_by_confidence(
+        state.critic_reports,
+        settings.routing,
+    )
+    state = state.model_copy(update={"routing_decision": routing_decision})
+
     # Stage 6: RCA Writer
     if all([state.incident, state.evidence_pack, state.hypotheses, state.critic_reports]):
         rca_doc = build_rca_doc(

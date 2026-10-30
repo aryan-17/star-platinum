@@ -7,6 +7,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
+from oncall_rca.routing import RoutingDecision
 from oncall_rca.schemas.code_context import CodeContext
 from oncall_rca.schemas.evidence import EvidencePack
 from oncall_rca.schemas.hypothesis import CriticReport, Hypothesis
@@ -66,6 +67,9 @@ class RunState(BaseModel):
         description="Per-journey critic reports: journey_index → CriticReport",
     )
     rca_doc: RCADoc | None = None
+
+    # Routing
+    routing_decision: RoutingDecision | None = None
 
     # Stage tracking
     stages: list[StageRecord] = Field(default_factory=list)
