@@ -8,7 +8,6 @@ import pytest
 from oncall_rca.schemas.trip_index import Service
 from oncall_rca.stages.evidence.index_normaliser import (
     _extract_file_inventory,
-    _flag_retries,
     _parse_duration,
     _parse_time,
     _pod_to_service,

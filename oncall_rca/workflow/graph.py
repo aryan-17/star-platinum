@@ -17,7 +17,6 @@ from langgraph.graph.state import CompiledStateGraph
 from oncall_rca.llm.client import LLMClient
 from oncall_rca.routing import route_by_confidence
 from oncall_rca.schemas.code_context import CodeContext
-from oncall_rca.schemas.evidence import EvidencePack
 from oncall_rca.schemas.hypothesis import CriticReport, Hypothesis
 from oncall_rca.schemas.incident import Incident, IncidentType
 from oncall_rca.schemas.run_state import RunState, StageRecord, StageStatus

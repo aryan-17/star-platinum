@@ -11,14 +11,12 @@ Handles every known quirk from the design plan (§5.4):
 
 from __future__ import annotations
 
-import re
 from datetime import datetime
 from typing import Any
 
 from oncall_rca.schemas.trip_index import (
     CallNode,
     FileRef,
-    PayloadFormat,
     Service,
     TripIndex,
 )

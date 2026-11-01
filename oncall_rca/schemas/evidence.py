@@ -6,7 +6,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
-from oncall_rca.schemas.trip_index import CallNode, Journey, TripIndex
+from oncall_rca.schemas.trip_index import TripIndex
 
 
 class BaggageChainStep(str, Enum):

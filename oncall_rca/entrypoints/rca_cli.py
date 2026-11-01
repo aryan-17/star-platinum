@@ -8,8 +8,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import json
-import sys
 from pathlib import Path
 
 from oncall_rca.workflow.pipeline import run_pipeline

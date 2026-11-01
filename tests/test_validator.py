@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 
 from oncall_rca.stages.evidence.validator import (
-    ValidationCheck,
     ValidationReport,
     _get_sms_hold_baggage,
     _get_sms_hold_fare,

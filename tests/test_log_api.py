@@ -5,8 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from oncall_rca.tools.log_api import detect_format, parse_payload, fetch_trip_index, TripNotFound
-from oncall_rca.config.settings import Settings
+from oncall_rca.tools.log_api import detect_format, parse_payload
 
 
 FIXTURE_DIR = Path("evals/golden_incidents/260802431929")
