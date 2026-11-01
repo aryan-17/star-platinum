@@ -9,22 +9,11 @@ import pytest
 
 from oncall_rca.llm.client import MockLLMClient
 from oncall_rca.schemas import (
-    BaggageChainStep,
-    CallNode,
-    Citation,
-    CodeContext,
-    CodeFile,
-    Confidence,
-    DivergencePoint,
-    EvidenceFact,
     EvidencePack,
-    Hypothesis,
     Incident,
     IncidentType,
     Journey,
-    RCADoc,
     RunState,
-    Service,
     TripIndex,
 )
 

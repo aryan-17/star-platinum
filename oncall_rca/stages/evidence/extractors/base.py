@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Protocol
 
-from oncall_rca.schemas.evidence import BaggageChainStep, Citation, EvidenceFact
+from oncall_rca.schemas.evidence import BaggageChainStep, EvidenceFact
 
 
 class Extractor(Protocol):

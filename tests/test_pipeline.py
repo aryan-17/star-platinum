@@ -1,19 +1,14 @@
 """Tests for end-to-end pipeline — using MockLLMClient."""
 
 import json
-from datetime import datetime
 from pathlib import Path
 
 import pytest
 
 from oncall_rca.llm.client import MockLLMClient
 from oncall_rca.schemas.hypothesis import Confidence, CriticReport, Hypothesis
-from oncall_rca.schemas.incident import Incident, IncidentType
 from oncall_rca.schemas.run_state import StageStatus
-from oncall_rca.stages.rca_writer.writer import render_rca_markdown, build_rca_doc, save_rca
-from oncall_rca.schemas.code_context import CodeContext
-from oncall_rca.schemas.evidence import EvidencePack
-from oncall_rca.schemas.trip_index import TripIndex
+from oncall_rca.stages.rca_writer.writer import render_rca_markdown, save_rca
 from oncall_rca.workflow.pipeline import run_pipeline
 
 

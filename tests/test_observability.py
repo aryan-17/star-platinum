@@ -3,7 +3,7 @@
 import json
 import logging
 
-from oncall_rca.observability.logging import JSONFormatter, setup_logging
+from oncall_rca.observability.logging import JSONFormatter
 from oncall_rca.observability.trace import TraceRecord, TraceStore
 
 

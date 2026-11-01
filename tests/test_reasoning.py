@@ -6,7 +6,6 @@ from oncall_rca.schemas.evidence import (
     BaggageChainStep,
     Citation,
     DivergencePoint,
-    EvidenceFact,
     EvidencePack,
 )
 from oncall_rca.schemas.hypothesis import (
