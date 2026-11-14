@@ -7,7 +7,7 @@ Given a trip ID or incident mail PDF, it fetches booking logs, traces the fare a
 ## What It Does
 
 ```
-Trip ID / Mail PDF
+Mail PDF
        │
        ▼
  Fetch trip logs + payload files (126+ API calls, SOAP + JSON)
